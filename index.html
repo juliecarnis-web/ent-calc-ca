@@ -21,11 +21,10 @@
         /* Animation Flip 3D (Corrigée pour l'opacité) */
         .perspective-1000 { perspective: 1000px; }
         .transform-style-3d { transform-style: preserve-3d; }
-        /* Forcer l'invisibilité de la face arrière de chaque côté */
         .front, .back { 
             backface-visibility: hidden; 
-            -webkit-backface-visibility: hidden; /* Safari */
-            background-color: white; /* Opacité stricte */
+            -webkit-backface-visibility: hidden;
+            background-color: white; 
         }
         .back { z-index: 10; }
         .rotate-y-180 { transform: rotateY(180deg); }
@@ -40,11 +39,12 @@
         .cell-carry { width: 1.8rem; height: 1.8rem; border-radius: 50%; border: 2px solid #e2e8f0; font-size: 0.9rem; font-weight: 700; text-align: center; background: #f8fafc; color: #ef4444;}
         .cell-carry:focus { border-color: #ef4444; outline: none; }
 
-        /* Nouveaux styles spécifiques pour l'arbre de calcul */
+        /* Styles spécifiques pour l'arbre de calcul */
         .tree-node-input { width: 4.5rem; height: 2rem; text-align: center; font-weight: bold; font-size: 0.9rem; border: 2px solid #94a3b8; border-radius: 0.5rem; background: white; color: #1e293b; }
         .tree-node-input:focus { border-color: #3b82f6; outline: none; }
         .tree-node-static { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 0.2rem 0.5rem; border-radius: 0.5rem; font-weight: bold; font-size: 0.8rem; color: #475569; white-space: nowrap; }
         .tree-node-correct { background: #d1fae5; border: 2px solid #10b981; color: #065f46; font-weight: 900; }
+        .tree-node-error { background: #fee2e2 !important; border-color: #ef4444 !important; color: #b91c1c !important; }
         .tree-vert-line { width: 2px; background-color: #94a3b8; margin: 2px auto;}
         .tree-horiz-line { height: 3px; background-color: #94a3b8; position: absolute; z-index: 1; border-radius: 2px; }
         
@@ -65,12 +65,7 @@
                 width: 95vw !important; 
                 margin: 10px auto;
             }
-            .front, .back { 
-                /* Permet au contenu de s'adapter si besoin, on utilise plutôt scale() sur un conteneur interne si on veut tout rétrécir, 
-                   mais flex fait déjà bien le travail d'adaptation. Ajoutons overflow-x-auto sur les blocs internes si ça dépasse. */
-            }
             h1 { font-size: 1.5rem !important; }
-            /* Adapter les contrôles pour qu'ils s'empilent */
             .controls-bar { flex-direction: column !important; align-items: stretch !important; gap: 10px !important; }
             .controls-bar > div { justify-content: center; width: 100%; flex-wrap: wrap; }
             #players-selector { justify-content: center; }
@@ -109,7 +104,7 @@
         </div>
     </div>
 
-    <!-- MAIN WORKSPACE -->
+    <!-- MAIN WORKSPACE (Grille dynamique TBI) -->
     <main class="flex-1 p-2 md:p-6 flex flex-col overflow-y-auto w-full">
         <div id="cards-container">
             <!-- Cartes joueurs injectées ici -->
@@ -117,7 +112,7 @@
     </main>
 
     <script>
-        const API_KEY = ""; // Clé API supprimée selon la demande
+        const API_KEY = ""; // IA désactivée
 
         let globalState = { mode: 'entrainement', playersCount: 1, timer: null, timeLeft: 30 };
         let cardsData = []; 
@@ -169,8 +164,6 @@
             globalState.playersCount = count;
             const container = document.getElementById('cards-container');
             
-            // Note: Les classes Grid sont gérées par le CSS auto-fit désormais.
-            
             let newCardsData = [];
             for(let i=0; i<count; i++) {
                 newCardsData.push(cardsData[i] || { n1: 0, n2: 0, ans: 0, rem: 0, op: '+', limit: 1000, type: 'entiers', format: 'pose' });
@@ -207,8 +200,8 @@
                         <option value="100" ${c.limit==100?'selected':''}>&lt; 100</option>
                         <option value="1000" ${c.limit==1000?'selected':''}>&lt; 1 000</option>
                         <option value="10000" ${c.limit==10000?'selected':''}>&lt; 10 000</option>
-                        <option value="100000" ${c.limit==100000?'selected':''}>&lt; 100k</option>
-                        <option value="1000000" ${c.limit==1000000?'selected':''}>&lt; 1M</option>
+                        <option value="100000" ${c.limit==100000?'selected':''}>&lt; 100 000</option>
+                        <option value="1000000" ${c.limit==1000000?'selected':''}>&lt; 1 000 000</option>
                     </select>
                     <button onclick="genererUnProbleme(${id})" class="bg-slate-800 text-white h-8 px-2 rounded-lg font-bold shadow hover:bg-slate-700 transition" title="Nouveau calcul"><i class="fa-solid fa-rotate-right"></i></button>
                 </div>`;
@@ -225,6 +218,7 @@
             <div class="perspective-1000 relative w-full flex-1 flex flex-col min-h-[600px] h-full" id="card-container-${id}">
                 <div class="flipper w-full h-full absolute transform-style-3d">
                     
+                    <!-- FACE AVANT (Exercice) -->
                     <div class="front absolute w-full h-full bg-white rounded-3xl shadow-xl flex flex-col p-3 md:p-4 border-2 border-slate-100 overflow-hidden">
                         ${settingsHtml}
                         
@@ -242,17 +236,21 @@
                         </div>
                     </div>
 
+                    <!-- FACE ARRIÈRE (Correction Nettoyée) -->
                     <div class="back absolute w-full h-full bg-white rounded-3xl shadow-xl flex flex-col p-3 md:p-4 border-2 border-slate-100 rotate-y-180 overflow-hidden">
                         
+                        <!-- En-tête Correction -->
                         <div class="flex justify-between items-center mb-4 shrink-0 px-2">
                             <h3 class="font-black text-xl text-slate-800 uppercase tracking-widest">Correction</h3>
-                            <div id="correction-badge-${id}" class="px-4 py-1 rounded-full font-black text-sm md:text-base shadow text-white"></div>
+                            <div id="correction-badge-${id}" class="px-6 py-2 rounded-full font-black text-sm md:text-base shadow text-white"></div>
                         </div>
 
+                        <!-- Visuel correction -->
                         <div class="flex-1 bg-emerald-50 border-2 border-emerald-100 rounded-xl flex flex-col items-center justify-center overflow-auto relative p-4 w-full">
-                            <div id="correct-grid-${id}" class="w-full flex flex-col items-center justify-center origin-top p-2" style="transform: scale(0.95); transform-origin: top center;"></div>
+                            <div id="correct-grid-${id}" class="w-full h-full flex flex-col items-center justify-center origin-top p-2" style="transform: scale(0.95); transform-origin: top center;"></div>
                         </div>
 
+                        <!-- Bouton Retour -->
                         <button onclick="retourner(${id})" class="mt-4 shrink-0 w-full bg-slate-900 hover:bg-slate-800 text-white text-xl font-black py-4 rounded-xl shadow transition flex items-center justify-center gap-2">
                             CONTINUER <i class="fa-solid fa-arrow-right"></i>
                         </button>
@@ -261,6 +259,7 @@
             </div>`;
         }
 
+        // --- GESTION DES REGLAGES INDIVIDUELS ---
         function updateCardSettings(id, key, value) {
             let c = cardsData[id];
             if(key === 'limit') value = parseInt(value);
@@ -385,22 +384,24 @@
                     if(decP[i] !== '0') pv[power] = "0," + "0".repeat(i) + decP[i];
                 }
             }
-            return pv;
+            return Object.keys(pv).map(Number).sort((a,b) => b - a).map(power => ({ val: pv[power], power: power }));
         }
 
-        function dessinerArbre(id, isCorrection) {
+        function dessinerArbre(id, isCorrection, errors = {}) {
             let c = cardsData[id];
-            let pv1 = getPlaceValues(c.n1Str); let pv2 = c.op === '*' ? {} : getPlaceValues(c.n2Str);
+            let p1 = getPlaceValues(c.n1Str); let p2 = c.op === '*' ? [] : getPlaceValues(c.n2Str);
             
             let allPowers = c.op === '*' ? 
-                Object.keys(pv1).map(Number).sort((a,b) => b - a) : 
-                Array.from(new Set([...Object.keys(pv1).map(Number), ...Object.keys(pv2).map(Number)])).sort((a,b) => b - a);
+                p1.map(p => p.power) : 
+                Array.from(new Set([...p1.map(p=>p.power), ...p2.map(p=>p.power)])).sort((a,b) => b - a);
 
             let html = `<div class="flex flex-col items-center w-full font-mono gap-2 md:gap-4 py-4 overflow-x-auto w-full relative">`;
             html += `<div class="flex flex-row gap-2 md:gap-4 justify-center flex-nowrap w-full relative z-10 px-2 min-w-max">`;
 
-            for(let power of allPowers) {
-                let v1 = pv1[power] || "0"; let v2 = c.op === '*' ? c.n2Str : (pv2[power] || "0");
+            for(let i=0; i<allPowers.length; i++) {
+                let power = allPowers[i];
+                let v1 = p1.find(p=>p.power===power)?.val || "0"; 
+                let v2 = c.op === '*' ? c.n2Str : (p2.find(p=>p.power===power)?.val || "0");
                 if (v1 === "0" && (c.op === '*' || v2 === "0")) continue;
 
                 let partAns;
@@ -421,9 +422,13 @@
                     lvl1 = `<div class="text-slate-700 font-bold text-[10px] md:text-sm bg-white px-1 py-1 md:px-3 md:py-2 rounded-lg md:rounded-xl border border-slate-300 shadow-sm whitespace-nowrap z-10 relative">${v1} ${c.op} ${v2}</div>`;
                 }
 
+                // Application de la classe d'erreur si présente
+                let lvl2Class = "tree-node-correct h-8 md:h-10 min-w-[3.5rem] px-2 text-xs md:text-sm flex items-center justify-center z-10 relative shadow-sm rounded-lg";
+                if(errors[`part_${power}`]) lvl2Class += " tree-node-error";
+
                 let lvl2 = isCorrection ?
-                    `<div class="tree-node-correct h-8 md:h-10 min-w-[3.5rem] px-2 text-xs md:text-sm flex items-center justify-center z-10 relative shadow-sm rounded-lg">${pAnsStr}</div>` :
-                    `<input type="text" class="tree-node-input tree-part-inp-${id} border-blue-400 h-8 md:h-10 w-12 md:w-16 text-xs md:text-sm focus:border-[#960018] z-10 relative shadow-sm rounded-lg" data-expected="${pAnsStr}">`;
+                    `<div class="${lvl2Class}">${pAnsStr}</div>` :
+                    `<input type="text" class="tree-node-input tree-part-inp-${id} border-blue-400 h-8 md:h-10 w-12 md:w-16 text-xs md:text-sm focus:border-[#960018] z-10 relative shadow-sm rounded-lg" data-expected="${pAnsStr}" data-power="${power}">`;
 
                 html += `
                     <div class="flex flex-col items-center relative flex-1 min-w-[3.5rem] md:min-w-[5rem] group-node-${id}">
@@ -436,8 +441,11 @@
             html += `</div>`; 
 
             // Niveau 3 : Résultat final
+            let fClass = "cell-input border-emerald-500 bg-emerald-100 text-emerald-900 shadow-md flex items-center justify-center font-black w-24 md:w-32 h-10 md:h-12 mt-1 text-base md:text-xl rounded-xl";
+            if(errors.final) fClass += " tree-node-error";
+
             let fInp = isCorrection ?
-                `<div class="cell-input border-emerald-500 bg-emerald-100 text-emerald-900 shadow-md flex items-center justify-center font-black w-24 md:w-32 h-10 md:h-12 mt-1 text-base md:text-xl rounded-xl">${c.ansStr}</div>` :
+                `<div class="${fClass}">${c.ansStr}</div>` :
                 `<input type="text" id="final-ans-${id}" class="cell-input tree-inp-${id} border-[#960018] shadow-md w-24 md:w-32 h-10 md:h-12 mt-1 text-base md:text-xl rounded-xl focus:border-red-600" data-expected="${c.ansStr}" placeholder="Total">`;
 
             html += `
@@ -456,7 +464,7 @@
             return mI + mD + (mD>0?1:0) + 2; 
         }
 
-        function dessinerGrille(id, isCorrection) {
+        function dessinerGrille(id, isCorrection, errors = {}) {
             let c = cardsData[id];
             
             // Division Posée
@@ -469,21 +477,25 @@
                             cur += s1Str[i]; let val = parseInt(cur);
                             if(val >= c.n2) {
                                 let sub = Math.floor(val/c.n2) * c.n2; let rem = val - sub;
-                                stepsHTML += `<div class="text-red-500 font-mono text-xs md:text-sm mt-1 tracking-widest leading-tight">${"&nbsp;".repeat(offset)}- ${sub}</div><div class="border-t-2 border-slate-400 w-12 ml-auto mb-1"></div>`;
+                                stepsHTML += `<div class="text-red-500 font-mono text-sm mt-1 tracking-widest leading-tight">${"&nbsp;".repeat(offset)}- ${sub}</div><div class="border-t-2 border-slate-400 w-12 ml-auto mb-1"></div>`;
                                 cur = rem === 0 ? "" : rem.toString();
                             }
                             offset++;
                         }
                     }
+                    
+                    let qClass = "pt-2 font-black text-lg md:text-xl tracking-widest w-full px-2 py-1 rounded " + (errors.quo ? "bg-red-100 text-red-800 border border-red-500" : "bg-blue-100 text-blue-800");
+                    let rClass = "font-bold mt-2 inline-block px-2 rounded text-xs md:text-sm " + (errors.rem ? "bg-red-100 text-red-800 border border-red-500" : "bg-emerald-100 text-emerald-700 border border-emerald-300");
+
                     return `
                         <div class="flex w-full max-w-[280px] mx-auto items-start font-mono">
                             <div class="flex-1 pr-2 md:pr-3 border-r-4 border-slate-800 text-right">
                                 <div class="tracking-[0.2em] font-black text-xl md:text-2xl text-slate-800">${c.n1Str}</div>${stepsHTML}
-                                <div class="text-emerald-700 font-bold mt-2 bg-emerald-100 inline-block px-2 rounded border border-emerald-300 text-xs md:text-sm">R: ${c.rem}</div>
+                                <div class="${rClass}">R: ${c.rem}</div>
                             </div>
                             <div class="flex-1 pl-2 md:pl-3 flex flex-col items-start">
                                 <div class="border-b-4 border-slate-800 pb-1 w-full font-black text-xl md:text-2xl tracking-[0.2em] text-slate-800">${c.n2Str}</div>
-                                <div class="pt-2 font-black text-lg md:text-xl text-blue-800 tracking-widest bg-blue-100 w-full px-2 py-1 rounded">${c.ansStr}</div>
+                                <div class="${qClass}">${c.ansStr}</div>
                             </div>
                         </div>`;
                 } else {
@@ -507,7 +519,7 @@
                 }
             }
 
-            // Grille Posée
+            // Grille Posée (Trous ou Classique)
             let cellW = globalState.playersCount >= 3 && !isCorrection ? '1.5rem' : '2.2rem';
             let cellF = 'clamp(12px, 2.5vw, 22px)';
             let cols = getCols(c.n1Str, c.n2Str);
@@ -520,7 +532,11 @@
                 for(let i=0; i<cols; i++) {
                     if (i >= s1Idx) {
                         let cIdx = i - s1Idx; let char = c.n1Str[cIdx];
-                        if(c.format==='trous' && c.mask.n1.includes(cIdx) && !isCorrection) html += `<input type="text" maxlength="1" class="cell-input trou-inp-${id} border-orange-400 bg-orange-50 p-0" data-expected="${char}" style="width:${cellW};font-size:${cellF}; height:2rem;">`;
+                        if (isCorrection && c.format === 'trous' && c.mask.n1.includes(cIdx)) {
+                            let cl = errors[`n1_${cIdx}`] ? "border-red-500 bg-red-100 text-red-900" : "border-emerald-500 bg-emerald-100 text-emerald-900";
+                            html += `<div class="cell-input shadow flex items-center justify-center font-black p-0 ${cl}" style="width:${cellW};height:2rem;font-size:${cellF}">${char}</div>`;
+                        }
+                        else if(c.format==='trous' && c.mask.n1.includes(cIdx) && !isCorrection) html += `<input type="text" maxlength="1" class="cell-input trou-inp-${id} border-orange-400 bg-orange-50 p-0" data-expected="${char}" data-pos="n1_${cIdx}" style="width:${cellW};font-size:${cellF}; height:2rem;">`;
                         else html += `<div class="cell-static ${char===','?'text-red-500':''}" style="width:${cellW};font-size:${cellF}">${char}</div>`;
                     } else html += `<div></div>`;
                 }
@@ -531,7 +547,11 @@
                     if(i === 0) html += `<div class="cell-static text-[#960018] ${border}" style="width:${cellW};font-size:${cellF}">${c.op}</div>`;
                     else if (i >= s2Idx) {
                         let cIdx = i - s2Idx; let char = c.n2Str[cIdx];
-                        if(c.format==='trous' && c.mask.n2.includes(cIdx) && !isCorrection) html += `<div class="${border}"><input type="text" maxlength="1" class="cell-input trou-inp-${id} border-orange-400 bg-orange-50 p-0" data-expected="${char}" style="width:${cellW};font-size:${cellF};height:2rem"></div>`;
+                        if (isCorrection && c.format === 'trous' && c.mask.n2.includes(cIdx)) {
+                            let cl = errors[`n2_${cIdx}`] ? "border-red-500 bg-red-100 text-red-900" : "border-emerald-500 bg-emerald-100 text-emerald-900";
+                            html += `<div class="${border}"><div class="cell-input shadow flex items-center justify-center font-black p-0 ${cl}" style="width:${cellW};height:2rem;font-size:${cellF}">${char}</div></div>`;
+                        }
+                        else if(c.format==='trous' && c.mask.n2.includes(cIdx) && !isCorrection) html += `<div class="${border}"><input type="text" maxlength="1" class="cell-input trou-inp-${id} border-orange-400 bg-orange-50 p-0" data-expected="${char}" data-pos="n2_${cIdx}" style="width:${cellW};font-size:${cellF};height:2rem"></div>`;
                         else html += `<div class="cell-static ${char===','?'text-red-500':''} ${border}" style="width:${cellW};font-size:${cellF}">${char}</div>`;
                     } else html += `<div class="${border}"></div>`;
                 }
@@ -540,12 +560,20 @@
                 for(let i=0; i<cols; i++) {
                     if (i >= sAnsIdx) {
                         let cIdx = i - sAnsIdx; let char = c.ansStr[cIdx];
-                        if (isCorrection) html += `<div class="cell-input border-emerald-500 bg-emerald-100 text-emerald-900 shadow flex items-center justify-center font-black" style="width:${cellW};height:2rem;font-size:${cellF}">${char}</div>`;
+                        if (isCorrection) {
+                            // On vérifie s'il y a une erreur sur cette case spécifique (trous ou posé normal)
+                            let isErr = false;
+                            if(c.format === 'trous' && c.mask.ans.includes(cIdx)) isErr = errors[`ans_${cIdx}`];
+                            else if (c.format === 'pose') isErr = errors[`ans_${cIdx}`];
+                            
+                            let cl = isErr ? "border-red-500 bg-red-100 text-red-900" : "border-emerald-500 bg-emerald-100 text-emerald-900";
+                            html += `<div class="cell-input shadow flex items-center justify-center font-black p-0 ${cl}" style="width:${cellW};height:2rem;font-size:${cellF}">${char}</div>`;
+                        }
                         else if (c.format === 'trous') {
-                            if (c.mask.ans.includes(cIdx)) html += `<input type="text" maxlength="1" class="cell-input trou-inp-${id} border-orange-400 bg-orange-50 p-0" data-expected="${char}" style="width:${cellW};height:2rem;font-size:${cellF}">`;
+                            if (c.mask.ans.includes(cIdx)) html += `<input type="text" maxlength="1" class="cell-input trou-inp-${id} border-orange-400 bg-orange-50 p-0" data-expected="${char}" data-pos="ans_${cIdx}" style="width:${cellW};height:2rem;font-size:${cellF}">`;
                             else html += `<div class="cell-static text-blue-800" style="width:${cellW};font-size:${cellF}">${char}</div>`;
                         }
-                        else html += `<input type="text" maxlength="1" class="cell-input pose-inp-${id} focus:border-[#960018] p-0" style="width:${cellW};height:2rem;font-size:${cellF}">`;
+                        else html += `<input type="text" maxlength="1" class="cell-input pose-inp-${id} focus:border-[#960018] p-0" data-pos="ans_${cIdx}" style="width:${cellW};height:2rem;font-size:${cellF}">`;
                     } else html += `<div></div>`;
                 }
             } 
@@ -558,7 +586,11 @@
                 for(let i=0; i<cols; i++) {
                     if (i>=s1Idx) {
                         let cIdx = i-s1Idx; let char=c.n1Str[cIdx];
-                        if(c.format==='trous' && c.mask.n1.includes(cIdx) && !isCorrection) html += `<input type="text" maxlength="1" class="cell-input trou-inp-${id} border-orange-400 bg-orange-50 p-0" data-expected="${char}" style="width:${cellW};font-size:${cellF};height:2rem">`;
+                        if (isCorrection && c.format === 'trous' && c.mask.n1.includes(cIdx)) {
+                            let cl = errors[`n1_${cIdx}`] ? "border-red-500 bg-red-100 text-red-900" : "border-emerald-500 bg-emerald-100 text-emerald-900";
+                            html += `<div class="cell-input shadow flex items-center justify-center font-black p-0 ${cl}" style="width:${cellW};height:2rem;font-size:${cellF}">${char}</div>`;
+                        }
+                        else if(c.format==='trous' && c.mask.n1.includes(cIdx) && !isCorrection) html += `<input type="text" maxlength="1" class="cell-input trou-inp-${id} border-orange-400 bg-orange-50 p-0" data-expected="${char}" data-pos="n1_${cIdx}" style="width:${cellW};font-size:${cellF};height:2rem">`;
                         else html += `<div class="cell-static ${char===','?'text-red-500':''}" style="width:${cellW};font-size:${cellF}">${char}</div>`;
                     } else html += `<div></div>`;
                 }
@@ -569,7 +601,11 @@
                     if(i===0) html += `<div class="cell-static text-[#960018] ${border}" style="width:${cellW};font-size:${cellF}">x</div>`;
                     else if(i>=s2Idx) {
                         let cIdx = i-s2Idx; let char=c.n2Str[cIdx];
-                        if(c.format==='trous' && c.mask.n2.includes(cIdx) && !isCorrection) html += `<div class="${border}"><input type="text" maxlength="1" class="cell-input trou-inp-${id} border-orange-400 bg-orange-50 p-0" data-expected="${char}" style="width:${cellW};font-size:${cellF};height:2rem"></div>`;
+                        if (isCorrection && c.format === 'trous' && c.mask.n2.includes(cIdx)) {
+                            let cl = errors[`n2_${cIdx}`] ? "border-red-500 bg-red-100 text-red-900" : "border-emerald-500 bg-emerald-100 text-emerald-900";
+                            html += `<div class="${border}"><div class="cell-input shadow flex items-center justify-center font-black p-0 ${cl}" style="width:${cellW};height:2rem;font-size:${cellF}">${char}</div></div>`;
+                        }
+                        else if(c.format==='trous' && c.mask.n2.includes(cIdx) && !isCorrection) html += `<div class="${border}"><input type="text" maxlength="1" class="cell-input trou-inp-${id} border-orange-400 bg-orange-50 p-0" data-expected="${char}" data-pos="n2_${cIdx}" style="width:${cellW};font-size:${cellF};height:2rem"></div>`;
                         else html += `<div class="cell-static ${char===','?'text-red-500':''} ${border}" style="width:${cellW};font-size:${cellF}">${char}</div>`;
                     } else html += `<div class="${border}"></div>`;
                 }
@@ -582,8 +618,12 @@
                         for(let col=0; col<cols; col++) {
                             if(col < cols - i) {
                                 let val = prodStr[col];
-                                if(isCorrection || c.format==='trous') html += `<div class="cell-static text-blue-700" style="width:${cellW};font-size:${cellF}">${val?.trim()?val:''}</div>`;
-                                else html += `<input type="text" maxlength="1" class="cell-input border-slate-200 bg-white p-0" style="width:${cellW};height:1.8rem;font-size:${cellF}">`;
+                                if (isCorrection) {
+                                    let cl = errors[`prod_${i}_${col}`] ? "border-red-500 bg-red-100 text-red-900" : "text-blue-700";
+                                    html += `<div class="cell-static ${cl}" style="width:${cellW};font-size:${cellF}">${val?.trim()?val:''}</div>`;
+                                }
+                                else if(c.format==='trous') html += `<div class="cell-static text-blue-700" style="width:${cellW};font-size:${cellF}">${val?.trim()?val:''}</div>`;
+                                else html += `<input type="text" maxlength="1" class="cell-input border-slate-200 bg-white p-0 prod-inp-${id}" data-expected="${val?.trim()?val:''}" data-pos="prod_${i}_${col}" style="width:${cellW};height:1.8rem;font-size:${cellF}">`;
                             } else html += `<div class="cell-static text-slate-300 font-black" style="width:${cellW};font-size:${cellF}">0</div>`;
                         }
                     }
@@ -597,45 +637,60 @@
                 for(let i=0; i<cols; i++) {
                     if (i >= sAnsIdx) {
                         let cIdx = i - sAnsIdx; let char = c.ansStr[cIdx];
-                        if (isCorrection) html += `<div class="cell-input border-emerald-500 bg-emerald-100 text-emerald-900 shadow flex items-center justify-center font-black p-0" style="width:${cellW};height:2rem;font-size:${cellF}">${char}</div>`;
+                        if (isCorrection) {
+                            let isErr = false;
+                            if(c.format === 'trous' && c.mask.ans.includes(cIdx)) isErr = errors[`ans_${cIdx}`];
+                            else if (c.format === 'pose') isErr = errors[`ans_${cIdx}`];
+                            
+                            let cl = isErr ? "border-red-500 bg-red-100 text-red-900" : "border-emerald-500 bg-emerald-100 text-emerald-900";
+                            html += `<div class="cell-input shadow flex items-center justify-center font-black p-0 ${cl}" style="width:${cellW};height:2rem;font-size:${cellF}">${char}</div>`;
+                        }
                         else if (c.format === 'trous') {
-                            if (c.mask.ans.includes(cIdx)) html += `<input type="text" maxlength="1" class="cell-input trou-inp-${id} border-orange-400 bg-orange-50 p-0" data-expected="${char}" style="width:${cellW};height:2rem;font-size:${cellF}">`;
+                            if (c.mask.ans.includes(cIdx)) html += `<input type="text" maxlength="1" class="cell-input trou-inp-${id} border-orange-400 bg-orange-50 p-0" data-expected="${char}" data-pos="ans_${cIdx}" style="width:${cellW};height:2rem;font-size:${cellF}">`;
                             else html += `<div class="cell-static text-blue-800" style="width:${cellW};font-size:${cellF}">${char}</div>`;
                         }
-                        else html += `<input type="text" maxlength="1" class="cell-input pose-inp-${id} focus:border-[#960018] p-0" style="width:${cellW};height:2rem;font-size:${cellF}">`;
+                        else html += `<input type="text" maxlength="1" class="cell-input pose-inp-${id} focus:border-[#960018] p-0" data-pos="ans_${cIdx}" style="width:${cellW};height:2rem;font-size:${cellF}">`;
                     } else html += `<div></div>`;
                 }
             }
             html += `</div>`; return html;
         }
 
-        function renderWorkspace(id, isCorrection) {
+        function renderWorkspace(id, isCorrection, errors = {}) {
             let c = cardsData[id];
             const ws = document.getElementById(isCorrection ? `correct-grid-${id}` : `workspace-${id}`);
-            if (c.format === 'arbre') ws.innerHTML = dessinerArbre(id, isCorrection);
-            else ws.innerHTML = dessinerGrille(id, isCorrection);
+            if (c.format === 'arbre') ws.innerHTML = dessinerArbre(id, isCorrection, errors);
+            else ws.innerHTML = dessinerGrille(id, isCorrection, errors);
         }
 
         function vider(id) { document.querySelectorAll(`#workspace-${id} input, #workspace-${id} textarea`).forEach(i => i.value = ''); }
 
-        // --- VERIFICATION ---
+        // --- VERIFICATION AVEC RECHERCHE D'ERREURS ---
         function corriger(id) {
-            let c = cardsData[id]; let isCorrect = false;
+            let c = cardsData[id]; let isCorrect = true;
+            let errors = {}; // Stocke les positions des erreurs
 
             if (c.format === 'arbre') {
-                isCorrect = true;
                 let inputs = document.querySelectorAll(`#workspace-${id} input.tree-part-inp-${id}`);
                 inputs.forEach(inp => { 
-                    if(inp.value.trim() !== inp.dataset.expected) isCorrect = false; 
+                    if(inp.value.trim() !== inp.dataset.expected) {
+                        isCorrect = false; 
+                        errors[`part_${inp.dataset.power}`] = true;
+                    }
                 });
-                let fAns = document.getElementById(`final-ans-${id}`)?.value || "?";
-                if(fAns !== c.ansStr) isCorrect = false;
+                let fAns = document.getElementById(`final-ans-${id}`);
+                if(fAns && fAns.value.trim() !== c.ansStr) {
+                    isCorrect = false;
+                    errors.final = true;
+                }
             }
             else if (c.format === 'trous') {
-                isCorrect = true;
-                let inputs = document.querySelectorAll(`#workspace-${id} input[data-expected]`);
+                let inputs = document.querySelectorAll(`#workspace-${id} input.trou-inp-${id}`);
                 inputs.forEach(inp => { 
-                    if(inp.value.trim() !== inp.dataset.expected) isCorrect = false; 
+                    if(inp.value.trim() !== inp.dataset.expected) {
+                        isCorrect = false; 
+                        errors[inp.dataset.pos] = true;
+                    }
                 });
             } 
             else if(c.op === '/') {
@@ -644,25 +699,45 @@
                 uQ = isNaN(uQ) ? 0 : uQ; uR = isNaN(uR) ? 0 : uR;
                 
                 if(c.type === 'decimaux') { 
-                    if(uQ === c.ans) isCorrect = true;
+                    if(uQ !== c.ans) { isCorrect = false; errors.quo = true; }
                 } else {
-                    if(uQ === c.ans && uR === c.rem) isCorrect = true;
+                    if(uQ !== c.ans) { isCorrect = false; errors.quo = true; }
+                    if(uR !== c.rem) { isCorrect = false; errors.rem = true; }
                 }
             } else {
-                let cells = document.querySelectorAll(`.pose-inp-${id}`);
+                // Posé classique
+                let cells = document.querySelectorAll(`#workspace-${id} .pose-inp-${id}`);
+                // On vérifie case par case pour le résultat final
+                cells.forEach(cell => {
+                    let expectedChar = c.ansStr[cell.dataset.pos.split('_')[1]];
+                    if(cell.value.trim() !== expectedChar && expectedChar !== ',') {
+                         isCorrect = false;
+                         errors[cell.dataset.pos] = true;
+                    }
+                });
+                // S'il y a des produits partiels, on les vérifie aussi
+                let prodCells = document.querySelectorAll(`#workspace-${id} .prod-inp-${id}`);
+                prodCells.forEach(cell => {
+                    if(cell.value.trim() !== cell.dataset.expected && cell.dataset.expected !== '') {
+                         isCorrect = false;
+                         errors[cell.dataset.pos] = true;
+                    }
+                });
+                
+                // Double vérif globale
                 let str = Array.from(cells).map(cell => cell.value === '' ? '0' : cell.value).join('');
                 let uAns = parseFloat(str.replace(',','.')); uAns = isNaN(uAns) ? 0 : uAns;
-                if(uAns === c.ans) isCorrect = true;
+                if(uAns !== c.ans) isCorrect = false;
             }
 
             let badge = document.getElementById(`correction-badge-${id}`);
-            renderWorkspace(id, true); 
+            renderWorkspace(id, true, errors); // Injecter correction visuelle avec l'objet errors
 
             if(isCorrect) {
-                badge.className = "px-6 py-1 rounded-full font-black text-sm md:text-base shadow bg-emerald-500 text-white";
+                badge.className = "px-6 py-2 rounded-full font-black text-sm md:text-base shadow bg-emerald-500 text-white";
                 badge.innerHTML = `<i class="fa-solid fa-check mr-2"></i>BRAVO`;
             } else {
-                badge.className = "px-6 py-1 rounded-full font-black text-sm md:text-base shadow bg-red-500 text-white";
+                badge.className = "px-6 py-2 rounded-full font-black text-sm md:text-base shadow bg-red-500 text-white";
                 badge.innerHTML = `<i class="fa-solid fa-xmark mr-2"></i>ERREUR`;
             }
             
