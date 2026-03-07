@@ -18,12 +18,12 @@
         input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type="number"], input[type="text"] { -moz-appearance: textfield; }
 
-        /* Animation Flip 3D (Corrigée pour l'opacité) */
+        /* Animation Flip 3D */
         .perspective-1000 { perspective: 1000px; }
         .transform-style-3d { transform-style: preserve-3d; }
         .front, .back { 
             backface-visibility: hidden; 
-            -webkit-backface-visibility: hidden;
+            -webkit-backface-visibility: hidden; 
             background-color: white; 
         }
         .back { z-index: 10; }
@@ -31,7 +31,7 @@
         .flipper { transition: transform 0.8s cubic-bezier(0.4, 0.2, 0.2, 1); }
         .flipped .flipper { transform: rotateY(180deg); }
 
-        /* Cellules strictes pour l'alignement mathématique */
+        /* Cellules mathématiques */
         .grid-math { display: grid; gap: 0.2rem; justify-items: center; align-items: center; font-family: 'Courier New', Courier, monospace; margin: 0 auto; }
         .cell-input { width: 2.2rem; height: 2.5rem; text-align: center; font-weight: 800; border: 2px solid #cbd5e1; border-radius: 0.4rem; background: white; color: #1e293b; transition: all 0.2s;}
         .cell-input:focus { border-color: #960018; outline: none; box-shadow: 0 0 0 3px rgba(150, 0, 24, 0.2); }
@@ -39,7 +39,7 @@
         .cell-carry { width: 1.8rem; height: 1.8rem; border-radius: 50%; border: 2px solid #e2e8f0; font-size: 0.9rem; font-weight: 700; text-align: center; background: #f8fafc; color: #ef4444;}
         .cell-carry:focus { border-color: #ef4444; outline: none; }
 
-        /* Styles spécifiques pour l'arbre de calcul */
+        /* Arbre de calcul */
         .tree-node-input { width: 4.5rem; height: 2rem; text-align: center; font-weight: bold; font-size: 0.9rem; border: 2px solid #94a3b8; border-radius: 0.5rem; background: white; color: #1e293b; }
         .tree-node-input:focus { border-color: #3b82f6; outline: none; }
         .tree-node-static { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 0.2rem 0.5rem; border-radius: 0.5rem; font-weight: bold; font-size: 0.8rem; color: #475569; white-space: nowrap; }
@@ -52,7 +52,7 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 
-        /* Styles Responsive et Grille Adaptative */
+        /* Grille Responsive */
         #cards-container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -61,10 +61,7 @@
         }
 
         @media (max-width: 640px) {
-            .perspective-1000 { 
-                width: 95vw !important; 
-                margin: 10px auto;
-            }
+            .perspective-1000 { width: 95vw !important; margin: 10px auto; }
             h1 { font-size: 1.5rem !important; }
             .controls-bar { flex-direction: column !important; align-items: stretch !important; gap: 10px !important; }
             .controls-bar > div { justify-content: center; width: 100%; flex-wrap: wrap; }
@@ -104,16 +101,12 @@
         </div>
     </div>
 
-    <!-- MAIN WORKSPACE (Grille dynamique TBI) -->
+    <!-- MAIN WORKSPACE -->
     <main class="flex-1 p-2 md:p-6 flex flex-col overflow-y-auto w-full">
-        <div id="cards-container">
-            <!-- Cartes joueurs injectées ici -->
-        </div>
+        <div id="cards-container"></div>
     </main>
 
     <script>
-        const API_KEY = ""; // IA désactivée
-
         let globalState = { mode: 'entrainement', playersCount: 1, timer: null, timeLeft: 30 };
         let cardsData = []; 
 
@@ -164,9 +157,17 @@
             globalState.playersCount = count;
             const container = document.getElementById('cards-container');
             
+            let gridClasses = {
+                1: 'grid-cols-1 max-w-4xl mx-auto',
+                2: 'grid-cols-1 lg:grid-cols-2 max-w-[98%] mx-auto',
+                3: 'grid-cols-1 lg:grid-cols-3 max-w-[98%] mx-auto',
+                4: 'grid-cols-1 lg:grid-cols-4 max-w-full px-2'
+            };
+            container.className = `grid gap-4 w-full min-h-0 ${gridClasses[count]}`;
+
             let newCardsData = [];
             for(let i=0; i<count; i++) {
-                newCardsData.push(cardsData[i] || { n1: 0, n2: 0, ans: 0, rem: 0, op: '+', limit: 1000, type: 'entiers', format: 'pose' });
+                newCardsData.push(cardsData[i] || { n1: 0, n2: 0, ans: 0, rem: 0, op: '+', limit: 1000, type: 'entiers', format: 'pose', rank: 1 });
             }
             cardsData = newCardsData;
 
@@ -179,6 +180,7 @@
             let c = cardsData[id];
             let opSymbol = c.op === '*' ? 'x' : (c.op === '/' ? '÷' : c.op);
             
+            // Paramètres Indépendants
             let settingsHtml = `
                 <div class="bg-slate-100 rounded-xl mb-3 flex flex-row justify-between items-center gap-1 md:gap-2 shrink-0 border border-slate-200 shadow-sm h-auto md:h-12 p-2 flex-wrap">
                     <select onchange="updateCardSettings(${id}, 'op', this.value)" class="bg-white border-2 border-[#960018] text-[#960018] rounded-lg h-8 px-1 md:px-2 font-black outline-none text-sm text-center shadow-sm cursor-pointer w-12">
@@ -186,6 +188,12 @@
                         <option value="-" ${c.op==='-'?'selected':''}>-</option>
                         <option value="*" ${c.op==='*'?'selected':''}>x</option>
                         <option value="/" ${c.op==='/'?'selected':''}>÷</option>
+                    </select>
+                    <select onchange="updateCardSettings(${id}, 'rank', this.value)" id="rank-select-${id}" class="bg-white border border-slate-300 rounded-lg h-8 px-1 font-bold text-slate-700 outline-none text-[11px] md:text-xs flex-1 cursor-pointer min-w-[60px]" style="display: ${c.op === '*' || c.op === '/' ? 'inline-block' : 'none'};">
+                        <option value="1" ${c.rank==1?'selected':''}>1 rang</option>
+                        <option value="2" ${c.rank==2?'selected':''}>2 rangs</option>
+                        <option value="3" ${c.rank==3?'selected':''}>3 rangs</option>
+                        <option value="4" ${c.rank==4?'selected':''}>4 rangs</option>
                     </select>
                     <select onchange="updateCardSettings(${id}, 'format', this.value)" id="format-select-${id}" class="bg-white border border-slate-300 rounded-lg h-8 px-1 font-bold text-slate-700 outline-none text-[11px] md:text-xs flex-1 cursor-pointer min-w-[60px]">
                         <option value="pose" ${c.format==='pose'?'selected':''}>Posé</option>
@@ -197,6 +205,7 @@
                         <option value="decimaux" ${c.type==='decimaux'?'selected':''}>Décimaux</option>
                     </select>
                     <select onchange="updateCardSettings(${id}, 'limit', this.value)" class="bg-white border border-slate-300 rounded-lg h-8 px-1 font-bold text-slate-500 outline-none text-[10px] md:text-xs flex-1 cursor-pointer min-w-[60px]">
+                        <option value="10" ${c.limit==10?'selected':''}>&lt; 10</option>
                         <option value="100" ${c.limit==100?'selected':''}>&lt; 100</option>
                         <option value="1000" ${c.limit==1000?'selected':''}>&lt; 1 000</option>
                         <option value="10000" ${c.limit==10000?'selected':''}>&lt; 10 000</option>
@@ -218,12 +227,11 @@
             <div class="perspective-1000 relative w-full flex-1 flex flex-col min-h-[600px] h-full" id="card-container-${id}">
                 <div class="flipper w-full h-full absolute transform-style-3d">
                     
-                    <!-- FACE AVANT (Exercice) -->
                     <div class="front absolute w-full h-full bg-white rounded-3xl shadow-xl flex flex-col p-3 md:p-4 border-2 border-slate-100 overflow-hidden">
                         ${settingsHtml}
                         
-                        <div class="bg-[#0f172a] rounded-xl text-white mb-3 shadow-inner py-3 flex items-center justify-center shrink-0 ${globalState.mode === 'libre' ? 'hidden' : ''}" id="banner-${id}">
-                            <h2 style="font-size: clamp(1.2rem, 3vw, 2.2rem);" class="font-black tracking-widest text-center px-4 w-full" id="op-display-${id}">---</h2>
+                        <div style="container-type: inline-size;" class="bg-[#0f172a] rounded-xl text-white mb-3 shadow-inner h-16 md:h-20 flex items-center justify-center shrink-0 w-full ${globalState.mode === 'libre' ? 'hidden' : ''}" id="banner-${id}">
+                            <h2 style="font-size: clamp(1.2rem, 9cqi, 3rem);" class="font-black tracking-widest text-center px-2 w-full whitespace-nowrap" id="op-display-${id}">---</h2>
                         </div>
                         
                         ${libreHtml}
@@ -236,21 +244,17 @@
                         </div>
                     </div>
 
-                    <!-- FACE ARRIÈRE (Correction Nettoyée) -->
                     <div class="back absolute w-full h-full bg-white rounded-3xl shadow-xl flex flex-col p-3 md:p-4 border-2 border-slate-100 rotate-y-180 overflow-hidden">
                         
-                        <!-- En-tête Correction -->
                         <div class="flex justify-between items-center mb-4 shrink-0 px-2">
                             <h3 class="font-black text-xl text-slate-800 uppercase tracking-widest">Correction</h3>
-                            <div id="correction-badge-${id}" class="px-6 py-2 rounded-full font-black text-sm md:text-base shadow text-white"></div>
+                            <div id="correction-badge-${id}" class="px-4 py-1 rounded-full font-black text-sm md:text-base shadow text-white"></div>
                         </div>
 
-                        <!-- Visuel correction -->
                         <div class="flex-1 bg-emerald-50 border-2 border-emerald-100 rounded-xl flex flex-col items-center justify-center overflow-auto relative p-4 w-full">
                             <div id="correct-grid-${id}" class="w-full h-full flex flex-col items-center justify-center origin-top p-2" style="transform: scale(0.95); transform-origin: top center;"></div>
                         </div>
 
-                        <!-- Bouton Retour -->
                         <button onclick="retourner(${id})" class="mt-4 shrink-0 w-full bg-slate-900 hover:bg-slate-800 text-white text-xl font-black py-4 rounded-xl shadow transition flex items-center justify-center gap-2">
                             CONTINUER <i class="fa-solid fa-arrow-right"></i>
                         </button>
@@ -259,14 +263,21 @@
             </div>`;
         }
 
-        // --- GESTION DES REGLAGES INDIVIDUELS ---
         function updateCardSettings(id, key, value) {
             let c = cardsData[id];
-            if(key === 'limit') value = parseInt(value);
+            if(key === 'limit' || key === 'rank') value = parseInt(value);
             c[key] = value;
             
             if(key === 'op') {
                 let formatSelect = document.getElementById(`format-select-${id}`);
+                let rankSelect = document.getElementById(`rank-select-${id}`);
+                
+                if (value === '*' || value === '/') {
+                    rankSelect.style.display = 'inline-block';
+                } else {
+                    rankSelect.style.display = 'none';
+                }
+
                 if (value === '/') {
                     formatSelect.value = 'pose'; c.format = 'pose'; formatSelect.disabled = true;
                 } else {
@@ -307,16 +318,42 @@
             if(globalState.mode === 'libre') { vider(id); return; }
             let c = cardsData[id]; let isDec = c.type === 'decimaux';
             
-            if (c.op === '+') { c.n1 = getRandom(c.limit/10, c.limit, isDec); c.n2 = getRandom(c.limit/100, c.limit, isDec); } 
-            else if (c.op === '-') { c.n1 = getRandom(c.limit/10, c.limit, isDec); c.n2 = getRandom(1, c.n1, isDec); } 
+            if (c.op === '+') { 
+                c.n1 = getRandom(c.limit === 10 ? 1 : (c.limit === 100 ? 10 : c.limit/10), c.limit, isDec); 
+                c.n2 = getRandom(c.limit === 10 ? 1 : (c.limit === 100 ? 1 : c.limit/100), c.limit, isDec); 
+            } 
+            else if (c.op === '-') { 
+                c.n1 = getRandom(c.limit === 10 ? 2 : (c.limit === 100 ? 10 : c.limit/10), c.limit, isDec); 
+                c.n2 = getRandom(1, c.n1, isDec); 
+            } 
             else if (c.op === '*') { 
-                c.n1 = getRandom(10, c.limit/10, isDec); 
-                c.n2 = c.format === 'arbre' ? getRandom(2, 9, false) : getRandom(12, 99, false); 
+                c.n1 = getRandom(2, c.limit === 10 ? 9 : (c.limit === 100 ? 50 : c.limit/10), isDec); 
+                
+                let minR = 2, maxR = 9;
+                if(c.rank == 2) { minR = 10; maxR = 99; }
+                else if(c.rank == 3) { minR = 100; maxR = 999; }
+                else if(c.rank == 4) { minR = 1000; maxR = 9999; }
+                
+                if(c.format === 'arbre') { minR = 2; maxR = 9; } 
+                
+                c.n2 = getRandom(minR, maxR, false); 
             } 
             else if (c.op === '/') {
-                c.n2 = getRandom(2, 20, false); let maxQ = Math.floor(c.limit / c.n2);
-                let q = getRandom(10, Math.max(10, Math.min(999, maxQ)), false);
+                let minR = 2, maxR = 9;
+                if(c.rank == 2) { minR = 10; maxR = 99; }
+                else if(c.rank == 3) { minR = 100; maxR = 999; }
+                else if(c.rank == 4) { minR = 1000; maxR = 9999; }
+                
+                c.n2 = getRandom(minR, maxR, false); 
+                
+                let maxQ = Math.floor(c.limit / c.n2);
+                let q = getRandom(1, Math.max(1, Math.min(999, maxQ)), false);
                 c.n1 = (c.n2 * q) + Math.floor(Math.random() * c.n2);
+                
+                if(c.n1 >= c.limit) {
+                    c.n1 = c.limit - 1;
+                }
+
                 if(isDec) c.n1 = parseFloat((c.n1 + getRandom(0.1, 0.99, true)).toFixed(2));
             }
 
@@ -354,17 +391,45 @@
         function genererMasquesTrous(id) {
             let c = cardsData[id];
             c.mask = { n1: [], n2: [], ans: [] };
-            let maskRnd = (str) => {
-                let valids = []; for(let i=0; i<str.length; i++) if(str[i]!==',') valids.push(i);
-                return valids.length > 0 ? [valids[Math.floor(Math.random() * valids.length)]] : [];
-            };
-            c.mask.n1 = maskRnd(c.n1Str); c.mask.n2 = maskRnd(c.n2Str); c.mask.ans = maskRnd(c.ansStr);
+            
+            let cols = getCols(c.n1Str, c.n2Str);
+            let s1Idx = cols - c.n1Str.length;
+            let s2Idx = cols - c.n2Str.length;
+            let sAnsIdx = cols - c.ansStr.length;
+            
+            for(let col = 0; col < cols; col++) {
+                let options = [];
+                if(col >= s1Idx && c.n1Str[col - s1Idx] !== ',') options.push('n1');
+                if(col >= s2Idx && c.n2Str[col - s2Idx] !== ',') options.push('n2');
+                if(col >= sAnsIdx && c.ansStr[col - sAnsIdx] !== ',') options.push('ans');
+                
+                if(options.length > 0) {
+                    if(Math.random() > 0.5) {
+                        let chosen = options[Math.floor(Math.random() * options.length)];
+                        if(chosen === 'n1') c.mask.n1.push(col - s1Idx);
+                        else if(chosen === 'n2') c.mask.n2.push(col - s2Idx);
+                        else if(chosen === 'ans') c.mask.ans.push(col - sAnsIdx);
+                    }
+                }
+            }
         }
 
         function afficherBandeau(id) {
             let c = cardsData[id];
             let sym = c.op === '*' ? 'x' : (c.op === '/' ? '÷' : c.op);
-            document.getElementById(`op-display-${id}`).innerHTML = `${c.n1Str} <span class="text-[#960018] mx-2">${sym}</span> ${c.n2Str}`;
+            
+            let dispN1 = c.n1Str;
+            let dispN2 = c.n2Str;
+            let dispAns = "";
+
+            if (c.format === 'trous') {
+                const applyMask = (str, mask) => str.split('').map((char, i) => mask && mask.includes(i) ? '.' : char).join('');
+                dispN1 = applyMask(c.n1Str, c.mask?.n1);
+                dispN2 = applyMask(c.n2Str, c.mask?.n2);
+                dispAns = ` <span class="text-white/50 mx-1">=</span> ${applyMask(c.ansStr, c.mask?.ans)}`;
+            }
+            
+            document.getElementById(`op-display-${id}`).innerHTML = `${dispN1} <span class="text-[#960018] mx-1 md:mx-2">${sym}</span> ${dispN2}${dispAns}`;
         }
 
         // --- MOTEUR DE RENDU ---
@@ -387,77 +452,6 @@
             return Object.keys(pv).map(Number).sort((a,b) => b - a).map(power => ({ val: pv[power], power: power }));
         }
 
-        function dessinerArbre(id, isCorrection, errors = {}) {
-            let c = cardsData[id];
-            let p1 = getPlaceValues(c.n1Str); let p2 = c.op === '*' ? [] : getPlaceValues(c.n2Str);
-            
-            let allPowers = c.op === '*' ? 
-                p1.map(p => p.power) : 
-                Array.from(new Set([...p1.map(p=>p.power), ...p2.map(p=>p.power)])).sort((a,b) => b - a);
-
-            let html = `<div class="flex flex-col items-center w-full font-mono gap-2 md:gap-4 py-4 overflow-x-auto w-full relative">`;
-            html += `<div class="flex flex-row gap-2 md:gap-4 justify-center flex-nowrap w-full relative z-10 px-2 min-w-max">`;
-
-            for(let i=0; i<allPowers.length; i++) {
-                let power = allPowers[i];
-                let v1 = p1.find(p=>p.power===power)?.val || "0"; 
-                let v2 = c.op === '*' ? c.n2Str : (p2.find(p=>p.power===power)?.val || "0");
-                if (v1 === "0" && (c.op === '*' || v2 === "0")) continue;
-
-                let partAns;
-                if (c.op === '+') partAns = parseFloat(v1.replace(',','.')) + parseFloat(v2.replace(',','.'));
-                else if (c.op === '-') partAns = parseFloat(v1.replace(',','.')) - parseFloat(v2.replace(',','.'));
-                else if (c.op === '*') partAns = parseFloat(v1.replace(',','.')) * parseFloat(v2.replace(',','.'));
-
-                let pAnsStr = parseFloat(partAns.toFixed(4)).toString().replace('.',',');
-
-                let lvl1;
-                if(c.op === '*') {
-                    lvl1 = `
-                        <div class="flex gap-1 items-center mb-1 z-10 relative">
-                            <div class="text-slate-700 font-bold text-[10px] md:text-sm bg-white px-2 py-1 md:px-3 md:py-2 rounded-xl border border-slate-300 shadow-sm">${v1}</div>
-                            <span class="text-[10px] md:text-xs font-black text-slate-400">x ${c.n2Str}</span>
-                        </div>`;
-                } else {
-                    lvl1 = `<div class="text-slate-700 font-bold text-[10px] md:text-sm bg-white px-1 py-1 md:px-3 md:py-2 rounded-lg md:rounded-xl border border-slate-300 shadow-sm whitespace-nowrap z-10 relative">${v1} ${c.op} ${v2}</div>`;
-                }
-
-                // Application de la classe d'erreur si présente
-                let lvl2Class = "tree-node-correct h-8 md:h-10 min-w-[3.5rem] px-2 text-xs md:text-sm flex items-center justify-center z-10 relative shadow-sm rounded-lg";
-                if(errors[`part_${power}`]) lvl2Class += " tree-node-error";
-
-                let lvl2 = isCorrection ?
-                    `<div class="${lvl2Class}">${pAnsStr}</div>` :
-                    `<input type="text" class="tree-node-input tree-part-inp-${id} border-blue-400 h-8 md:h-10 w-12 md:w-16 text-xs md:text-sm focus:border-[#960018] z-10 relative shadow-sm rounded-lg" data-expected="${pAnsStr}" data-power="${power}">`;
-
-                html += `
-                    <div class="flex flex-col items-center relative flex-1 min-w-[3.5rem] md:min-w-[5rem] group-node-${id}">
-                        ${lvl1}
-                        <div class="tree-vert-line h-3 md:h-5"></div>
-                        ${lvl2}
-                        <div class="tree-vert-line h-4 md:h-6 relative"></div>
-                    </div>`;
-            }
-            html += `</div>`; 
-
-            // Niveau 3 : Résultat final
-            let fClass = "cell-input border-emerald-500 bg-emerald-100 text-emerald-900 shadow-md flex items-center justify-center font-black w-24 md:w-32 h-10 md:h-12 mt-1 text-base md:text-xl rounded-xl";
-            if(errors.final) fClass += " tree-node-error";
-
-            let fInp = isCorrection ?
-                `<div class="${fClass}">${c.ansStr}</div>` :
-                `<input type="text" id="final-ans-${id}" class="cell-input tree-inp-${id} border-[#960018] shadow-md w-24 md:w-32 h-10 md:h-12 mt-1 text-base md:text-xl rounded-xl focus:border-red-600" data-expected="${c.ansStr}" placeholder="Total">`;
-
-            html += `
-                <div class="flex flex-col items-center relative w-[85%] md:w-[75%] -mt-1 md:-mt-2">
-                    <div class="tree-horiz-line w-full top-0"></div>
-                    <div class="tree-vert-line h-4 md:h-6 mb-1 relative z-10"></div>
-                    ${fInp}
-                </div></div>`;
-
-            return html;
-        }
-
         function getCols(s1, s2) {
             let p1 = s1.split(','); let p2 = s2.split(',');
             let mI = Math.max(p1[0].length, p2[0].length); let mD = Math.max((p1[1]||'').length, (p2[1]||'').length);
@@ -467,7 +461,6 @@
         function dessinerGrille(id, isCorrection, errors = {}) {
             let c = cardsData[id];
             
-            // Division Posée
             if (c.op === '/') {
                 if(isCorrection) {
                     let stepsHTML = "";
@@ -506,20 +499,19 @@
                                 <textarea class="w-full flex-1 bg-white border-2 border-slate-200 rounded-lg resize-none outline-none text-right text-sm md:text-base text-slate-600 custom-scrollbar p-2" placeholder="Sous-tractions..."></textarea>
                                 <div class="mt-2 flex items-center gap-1 md:gap-2">
                                     <span class="font-bold text-red-600 uppercase text-[10px] md:text-xs">Reste</span>
-                                    <input type="number" step="any" id="rem-${id}" class="cell-input w-16 md:w-20 border-red-300 text-red-700 focus:border-red-600" style="height:2rem;font-size:1rem;">
+                                    <input type="number" step="any" id="rem-${id}" class="cell-input w-16 md:w-20 border-red-300 text-red-700 focus:border-red-600" style="height:2rem;font-size:1.1rem;">
                                 </div>
                             </div>
                             <div class="flex-1 pl-2 md:pl-3 flex flex-col relative">
                                 <div class="border-b-4 border-slate-800 pb-1 font-black text-xl md:text-2xl tracking-[0.3em] text-slate-800">${c.n2Str}</div>
                                 <div class="pt-3">
-                                    <input type="number" step="any" id="quo-${id}" class="cell-input w-full bg-blue-50 border-blue-300 text-blue-800 tracking-widest focus:border-blue-600 font-black" placeholder="Quot." style="height:2.5rem;font-size:1rem;">
+                                    <input type="number" step="any" id="quo-${id}" class="cell-input w-full bg-blue-50 border-blue-300 text-blue-800 tracking-widest focus:border-blue-600 font-black" placeholder="Quotient" style="height:2.5rem;font-size:1.2rem;">
                                 </div>
                             </div>
                         </div>`;
                 }
             }
 
-            // Grille Posée (Trous ou Classique)
             let cellW = globalState.playersCount >= 3 && !isCorrection ? '1.5rem' : '2.2rem';
             let cellF = 'clamp(12px, 2.5vw, 22px)';
             let cols = getCols(c.n1Str, c.n2Str);
@@ -561,7 +553,6 @@
                     if (i >= sAnsIdx) {
                         let cIdx = i - sAnsIdx; let char = c.ansStr[cIdx];
                         if (isCorrection) {
-                            // On vérifie s'il y a une erreur sur cette case spécifique (trous ou posé normal)
                             let isErr = false;
                             if(c.format === 'trous' && c.mask.ans.includes(cIdx)) isErr = errors[`ans_${cIdx}`];
                             else if (c.format === 'pose') isErr = errors[`ans_${cIdx}`];
@@ -659,16 +650,173 @@
         function renderWorkspace(id, isCorrection, errors = {}) {
             let c = cardsData[id];
             const ws = document.getElementById(isCorrection ? `correct-grid-${id}` : `workspace-${id}`);
-            if (c.format === 'arbre') ws.innerHTML = dessinerArbre(id, isCorrection, errors);
-            else ws.innerHTML = dessinerGrille(id, isCorrection, errors);
+            
+            if (c.format === 'arbre') {
+                if (c.op === '/') {
+                    ws.innerHTML = `<div class="text-[#960018] font-black text-xl md:text-2xl py-8 text-center flex items-center justify-center h-full w-full">Mode arbre indisponible</div>`;
+                    return;
+                }
+
+                // Utilitaire pour extraire la valeur de chaque rang (centaines, dizaines, etc.)
+                function getPlaceValuesMap(str) {
+                    let pv = {};
+                    let [intP, decP] = str.split(',');
+                    if (intP) {
+                        let len = intP.length;
+                        for(let i=0; i<len; i++) {
+                            let pwr = len - 1 - i;
+                            pv[pwr] = parseFloat(intP[i] + '0'.repeat(pwr));
+                        }
+                    }
+                    if (decP) {
+                        let len = decP.length;
+                        for(let i=0; i<len; i++) {
+                            let pwr = -(i + 1);
+                            pv[pwr] = parseFloat('0.' + '0'.repeat(i) + decP[i]);
+                        }
+                    }
+                    return pv;
+                }
+
+                const getInput = (expected, pwr) => {
+                    let expStr = expected.toString().replace('.', ',');
+                    let w = Math.max(3, expStr.length + 1) + 'ch'; // Largeur dynamique selon la taille du nombre
+                    if (isCorrection) {
+                        let isErr = errors[`part_${pwr}`];
+                        let cl = isErr ? "text-red-600 border-red-500 bg-red-50" : "text-emerald-700 border-emerald-500 bg-emerald-50";
+                        return `<div class="inline-block text-center border-b-2 font-bold ${cl} py-1 mx-1 shadow-sm" style="width:${w}; min-width:3rem;">${expStr}</div>`;
+                    } else {
+                        return `<input type="text" class="text-center border-b-2 border-slate-400 focus:border-[#960018] outline-none bg-transparent font-bold text-lg tree-part-inp-${id} mx-1" data-expected="${expStr}" data-power="${pwr}" style="width:${w}; min-width:3rem;">`;
+                    }
+                };
+
+                const getFinalInput = (expected) => {
+                    let expStr = expected.toString().replace('.', ',');
+                    let w = Math.max(4, expStr.length + 2) + 'ch';
+                    if (isCorrection) {
+                        let isErr = errors.final;
+                        let cl = isErr ? "text-red-600 border-red-500 bg-red-50" : "text-emerald-700 border-emerald-500 bg-emerald-50";
+                        return `<div class="inline-block text-center border-b-2 font-black text-xl ${cl} py-1 mx-1 shadow-sm" style="width:${w}; min-width:4rem;">${expStr}</div>`;
+                    } else {
+                        return `<input type="text" id="final-ans-${id}" class="text-center border-b-2 border-slate-400 focus:border-[#960018] outline-none bg-transparent font-black text-xl mx-1" data-expected="${expStr}" style="width:${w}; min-width:4rem;">`;
+                    }
+                };
+
+                let html = `<div class="flex flex-col items-center justify-center w-full font-mono gap-5 py-6 overflow-x-auto min-w-max px-4 custom-scrollbar relative">`;
+
+                if (c.op === '+') {
+                    let pv1 = getPlaceValuesMap(c.n1Str);
+                    let pv2 = getPlaceValuesMap(c.n2Str);
+                    let allPowers = Array.from(new Set([...Object.keys(pv1), ...Object.keys(pv2)])).map(Number).sort((a,b) => b - a);
+                    allPowers = allPowers.filter(pwr => pv1[pwr] !== 0 || pv2[pwr] !== 0); // Exclut les rangs à 0 des deux côtés
+                    if(allPowers.length === 0) allPowers = [0];
+
+                    // --- Ligne 1 : Décomposition ---
+                    let l1Html = `<div class="flex items-center tracking-wider whitespace-nowrap text-sm md:text-lg">`;
+                    let sums = [];
+                    allPowers.forEach((pwr, idx) => {
+                        let v1 = pv1[pwr] || 0;
+                        let v2 = pv2[pwr] || 0;
+                        sums.push(v1 + v2);
+                        if(idx > 0) l1Html += `<span class="text-slate-500 font-bold mx-2">+</span>`;
+                        l1Html += `( ${getInput(v1, 'a1_n1_'+pwr)} <span class="text-slate-500 mx-1">+</span> ${getInput(v2, 'a1_n2_'+pwr)} )`;
+                    });
+                    l1Html += `</div>`;
+                    html += l1Html;
+
+                    // --- Ligne 2 : Résultats intermédiaires ---
+                    let l2Html = `<div class="flex items-center tracking-wider whitespace-nowrap text-sm md:text-lg">`;
+                    sums.forEach((s, idx) => {
+                        if(idx > 0) l2Html += `<span class="text-slate-500 font-bold mx-2">+</span>`;
+                        l2Html += getInput(parseFloat(s.toFixed(4)), 'a2_'+idx);
+                    });
+                    l2Html += `</div>`;
+                    html += l2Html;
+
+                    // --- Ligne 3 : Total ---
+                    html += `<div class="flex items-center tracking-wider mt-2">${getFinalInput(c.ans)}</div>`;
+
+                } 
+                else if (c.op === '*') {
+                    let pv2 = getPlaceValuesMap(c.n2Str);
+                    let p2Powers = Object.keys(pv2).map(Number).sort((a,b) => b - a).filter(pwr => pv2[pwr] !== 0);
+                    if(p2Powers.length === 0) p2Powers = [0];
+
+                    // --- Ligne 1 : Distribution ---
+                    let l1Html = `<div class="flex items-center tracking-wider whitespace-nowrap text-sm md:text-lg">`;
+                    p2Powers.forEach((pwr, idx) => {
+                        let p2Val = pv2[pwr];
+                        if(idx > 0) l1Html += `<span class="text-slate-500 font-bold mx-2">+</span>`;
+                        l1Html += `( <span class="font-bold text-slate-700">${c.n1Str}</span> <span class="text-slate-500 mx-1">x</span> ${getInput(p2Val, 'm1_'+pwr)} )`;
+                    });
+                    l1Html += `</div>`;
+                    html += l1Html;
+
+                    // --- Ligne 2 : Produits calculés ---
+                    let l2Html = `<div class="flex items-center tracking-wider whitespace-nowrap text-sm md:text-lg">`;
+                    p2Powers.forEach((pwr, idx) => {
+                        let p2Val = pv2[pwr];
+                        let prod = parseFloat((c.n1 * p2Val).toFixed(4));
+                        if(idx > 0) l2Html += `<span class="text-slate-500 font-bold mx-2">+</span>`;
+                        l2Html += getInput(prod, 'm2_'+pwr);
+                    });
+                    l2Html += `</div>`;
+                    html += l2Html;
+
+                    // --- Ligne 3 : Total ---
+                    html += `<div class="flex items-center tracking-wider mt-2">${getFinalInput(c.ans)}</div>`;
+
+                }
+                else if (c.op === '-') {
+                    let pv2 = getPlaceValuesMap(c.n2Str);
+                    let p2Powers = Object.keys(pv2).map(Number).sort((a,b) => b - a).filter(pwr => pv2[pwr] !== 0);
+                    if(p2Powers.length === 0) p2Powers = [0];
+
+                    // --- Ligne 1 : Décomposition de la soustraction ---
+                    let l1Html = `<div class="flex items-center tracking-wider whitespace-nowrap text-sm md:text-lg">`;
+                    l1Html += `<span class="font-bold text-slate-700 mr-2">${c.n1Str}</span>`;
+                    p2Powers.forEach((pwr, idx) => {
+                        l1Html += `<span class="text-slate-500 font-bold mx-2">-</span> ${getInput(pv2[pwr], 's1_'+pwr)}`;
+                    });
+                    l1Html += `</div>`;
+                    html += l1Html;
+
+                    // --- Lignes suivantes : Retraits successifs ---
+                    let currentTotal = c.n1;
+                    for (let i = 0; i < p2Powers.length; i++) {
+                        currentTotal -= pv2[p2Powers[i]];
+                        currentTotal = parseFloat(currentTotal.toFixed(4));
+                        
+                        let lineHtml = `<div class="flex items-center tracking-wider whitespace-nowrap text-sm md:text-lg">`;
+                        if (i === p2Powers.length - 1) {
+                            // Résultat final
+                            lineHtml += getFinalInput(currentTotal);
+                        } else {
+                            // Résultat intermédiaire + on reporte les retraits grisés restants
+                            lineHtml += getInput(currentTotal, 's2_'+i);
+                            for (let j = i + 1; j < p2Powers.length; j++) {
+                                let pStr = pv2[p2Powers[j]].toString().replace('.', ',');
+                                lineHtml += `<span class="text-slate-400 font-bold mx-2 opacity-60">-</span> <span class="text-slate-400 font-bold opacity-60">${pStr}</span>`;
+                            }
+                        }
+                        lineHtml += `</div>`;
+                        html += lineHtml;
+                    }
+                }
+
+                html += `</div>`;
+                ws.innerHTML = html;
+
+            } else {
+                ws.innerHTML = dessinerGrille(id, isCorrection, errors);
+            }
         }
 
         function vider(id) { document.querySelectorAll(`#workspace-${id} input, #workspace-${id} textarea`).forEach(i => i.value = ''); }
 
-        // --- VERIFICATION AVEC RECHERCHE D'ERREURS ---
         function corriger(id) {
             let c = cardsData[id]; let isCorrect = true;
-            let errors = {}; // Stocke les positions des erreurs
+            let errors = {};
 
             if (c.format === 'arbre') {
                 let inputs = document.querySelectorAll(`#workspace-${id} input.tree-part-inp-${id}`);
@@ -705,9 +853,7 @@
                     if(uR !== c.rem) { isCorrect = false; errors.rem = true; }
                 }
             } else {
-                // Posé classique
                 let cells = document.querySelectorAll(`#workspace-${id} .pose-inp-${id}`);
-                // On vérifie case par case pour le résultat final
                 cells.forEach(cell => {
                     let expectedChar = c.ansStr[cell.dataset.pos.split('_')[1]];
                     if(cell.value.trim() !== expectedChar && expectedChar !== ',') {
@@ -715,7 +861,6 @@
                          errors[cell.dataset.pos] = true;
                     }
                 });
-                // S'il y a des produits partiels, on les vérifie aussi
                 let prodCells = document.querySelectorAll(`#workspace-${id} .prod-inp-${id}`);
                 prodCells.forEach(cell => {
                     if(cell.value.trim() !== cell.dataset.expected && cell.dataset.expected !== '') {
@@ -724,14 +869,13 @@
                     }
                 });
                 
-                // Double vérif globale
                 let str = Array.from(cells).map(cell => cell.value === '' ? '0' : cell.value).join('');
                 let uAns = parseFloat(str.replace(',','.')); uAns = isNaN(uAns) ? 0 : uAns;
                 if(uAns !== c.ans) isCorrect = false;
             }
 
             let badge = document.getElementById(`correction-badge-${id}`);
-            renderWorkspace(id, true, errors); // Injecter correction visuelle avec l'objet errors
+            renderWorkspace(id, true, errors);
 
             if(isCorrect) {
                 badge.className = "px-6 py-2 rounded-full font-black text-sm md:text-base shadow bg-emerald-500 text-white";
