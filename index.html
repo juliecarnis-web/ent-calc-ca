@@ -98,12 +98,6 @@
         input[type=number]::-webkit-outer-spin-button { 
             -webkit-appearance: none; margin: 0; 
         }
-
-        @keyframes bounce-subtle {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-2px); }
-        }
-        .animate-bounce-subtle { animation: bounce-subtle 2s infinite; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -164,7 +158,6 @@
 
         let cardsData = [];
 
-        // Initialisation
         function init() {
             setupGlobalListeners();
             setPlayers(1);
@@ -251,7 +244,6 @@
             };
             container.className = `grid gap-6 w-full ${gridClasses[count]}`;
 
-            // Reset cardsData but keep existing if possible
             let newCardsData = [];
             for (let i = 0; i < count; i++) {
                 if (cardsData[i]) {
@@ -338,9 +330,9 @@
                         
                         <!-- Libre Inputs -->
                         <div id="libre-inputs-${id}" class="${globalState.mode === 'libre' ? 'flex' : 'hidden'} justify-center items-center gap-3 mb-4 bg-slate-50 p-4 rounded-2xl border border-slate-200 flex-wrap">
-                            <input type="number" step="any" id="libre-n1-${id}" placeholder="Nombre 1" class="w-full md:w-[40%] border-2 border-slate-300 rounded-xl p-3 text-center font-bold focus:border-[#960018] outline-none shadow-sm">
+                            <input type="number" step="any" value="" id="libre-n1-${id}" placeholder="Nombre 1" class="w-full md:w-[40%] border-2 border-slate-300 rounded-xl p-3 text-center font-bold focus:border-[#960018] outline-none shadow-sm">
                             <span class="text-2xl font-black text-slate-400" id="libre-op-symbol-${id}">${opSymbol}</span>
-                            <input type="number" step="any" id="libre-n2-${id}" placeholder="Nombre 2" class="w-full md:w-[40%] border-2 border-slate-300 rounded-xl p-3 text-center font-bold focus:border-[#960018] outline-none shadow-sm">
+                            <input type="number" step="any" value="" id="libre-n2-${id}" placeholder="Nombre 2" class="w-full md:w-[40%] border-2 border-slate-300 rounded-xl p-3 text-center font-bold focus:border-[#960018] outline-none shadow-sm">
                             <button onclick="genererGrilleLibre(${id})" class="bg-[#960018] text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-red-800 transition w-full md:w-auto">
                                 <i class="fa-solid fa-play mr-2"></i> POSER
                             </button>
@@ -461,7 +453,6 @@
                 else if (c.rank == 3) { minR = 100; maxR = 999; }
                 else if (c.rank == 4) { minR = 1000; maxR = 9999; }
                 
-                // For Arbre multiplication, we often want 1-digit multiplier for simpler distributivity
                 if (c.format === 'arbre') { minR = 2; maxR = 9; }
                 
                 c.n2 = getRandom(minR, maxR, false); 
@@ -569,23 +560,16 @@
             return mI + mD + (mD > 0 ? 1 : 0) + 2; 
         }
 
+        // ---------- MOTEUR ISOMETRIQUE 3D ----------
         function renderBlocksHTML(num) {
-            if (num > 5000) return `<div class="text-red-500 font-bold">Nombre trop grand (>5000)</div>`;
+            if (num > 5000) return `<div class="text-red-500 font-bold text-center mt-10">Nombre trop grand (>5000)</div>`;
             let n = Math.floor(num);
             const m = Math.floor(n / 1000); n %= 1000;
             const c = Math.floor(n / 100); n %= 100;
             const d = Math.floor(n / 10);
             const u = n % 10;
 
-            const createCube = (x, y, color, size = 10) => {
-                const s = size;
-                return `<g transform="translate(${x},${y})">
-                    <path d="M0,${s/2} L${s},0 L${2*s},${s/2} L${s},${s} Z" fill="${color.top}" stroke="rgba(0,0,0,0.1)" stroke-width="0.5"/>
-                    <path d="M0,${s/2} L0,${1.5*s} L${s},${2*s} L${s},${s} Z" fill="${color.left}" stroke="rgba(0,0,0,0.1)" stroke-width="0.5"/>
-                    <path d="M${s},${s} L${s},${2*s} L${2*s},${1.5*s} L${2*s},${s/2} Z" fill="${color.right}" stroke="rgba(0,0,0,0.1)" stroke-width="0.5"/>
-                </g>`;
-            };
-
+            const size = 10; 
             const colors = {
                 u: { top: '#fef08a', left: '#fde047', right: '#facc15' },
                 d: { top: '#bfdbfe', left: '#60a5fa', right: '#2563eb' },
@@ -593,55 +577,120 @@
                 m: { top: '#fecaca', left: '#f87171', right: '#dc2626' }
             };
 
-            let svg = `<svg viewBox="0 0 400 250" class="w-full h-full" preserveAspectRatio="xMidYMid meet">`;
+            const drawIsoCube = (x, y, col) => {
+                const s = size;
+                return `<g transform="translate(${x},${y})">
+                    <path d="M0,${s/2} L${s},0 L${2*s},${s/2} L${s},${s} Z" fill="${col.top}" stroke="rgba(0,0,0,0.2)" stroke-width="0.5"/>
+                    <path d="M0,${s/2} L0,${s*1.2} L${s},${s*1.7} L${s},${s} Z" fill="${col.left}" stroke="rgba(0,0,0,0.2)" stroke-width="0.5"/>
+                    <path d="M${s},${s} L${s},${s*1.7} L${2*s},${s*1.2} L${2*s},${s/2} Z" fill="${col.right}" stroke="rgba(0,0,0,0.2)" stroke-width="0.5"/>
+                </g>`;
+            };
+
+            let svg = '';
+            let offsetX = 50;
+            let baseY = 250;
+
+            // Rendu des Milliers (Gros cubes 10x10x10)
+            for(let i=0; i<m; i++) {
+                for(let z=0; z<10; z++) {
+                    for(let y=0; y<10; y++) {
+                        for(let x=0; x<10; x++) {
+                            if(x === 9 || y === 0 || z === 0) {
+                                svg += drawIsoCube(offsetX + i*size*25 + x*size - z*size*0.5, baseY - y*size - z*size*0.5, colors.m);
+                            }
+                        }
+                    }
+                }
+            }
+            if(m > 0) offsetX += m * size * 25;
+
+            // Rendu des Centaines (Plaques 10x10 DEBOUT)
+            for(let i=0; i<c; i++) {
+                let startX = offsetX + i*size*15;
+                for(let y=0; y<10; y++) {
+                    for(let x=0; x<10; x++) {
+                        svg += drawIsoCube(startX + x*size, baseY - y*size, colors.c);
+                    }
+                }
+            }
+            if(c > 0) offsetX += c * size * 15 + 20;
+
+            // Rendu des Dizaines (Barres de 10)
+            for(let i=0; i<d; i++) {
+                let startX = offsetX + i*size*4;
+                for(let y=0; y<10; y++) {
+                    svg += drawIsoCube(startX, baseY - y*size, colors.d);
+                }
+            }
+            if(d > 0) offsetX += d * size * 4 + 20;
+
+            // Rendu des Unités (Petits cubes)
+            for(let i=0; i<u; i++) {
+                svg += drawIsoCube(offsetX + (i%2)*size*2.5, baseY - Math.floor(i/2)*size*1.2, colors.u);
+            }
             
-            // Milliers (Rouge) - Stacks
-            for (let i = 0; i < m; i++) {
-                svg += createCube(10 + (i * 50), 20, colors.m, 22);
-            }
-
-            // Centaines (Vert) - Grid
-            for (let i = 0; i < c; i++) {
-                let row = Math.floor(i / 5);
-                let col = i % 5;
-                svg += createCube(180 + (col * 40), 20 + (row * 30), colors.c, 16);
-            }
-
-            // Dizaines (Bleu) - Row
-            for (let i = 0; i < d; i++) {
-                let row = Math.floor(i / 5);
-                let col = i % 5;
-                svg += createCube(10 + (col * 30), 140 + (row * 25), colors.d, 12);
-            }
-
-            // Unités (Jaune) - Cluster
-            for (let i = 0; i < u; i++) {
-                let row = Math.floor(i / 5);
-                let col = i % 5;
-                svg += createCube(180 + (col * 25), 140 + (row * 20), colors.u, 10);
-            }
-
-            return svg + `</svg>`;
+            let totalWidth = offsetX + size * 10;
+            return `<svg viewBox="-50 -100 ${Math.max(400, totalWidth + 100)} 500" class="w-full h-full max-h-[300px]" preserveAspectRatio="xMidYMid meet">${svg}</svg>`;
         }
 
-        function renderWorkspace(id, isCorrection, errors = {}) {
+        // ---------- MOTEUR GRILLE MULTIPLICATION ----------
+        function renderMultiplicationGrid(n1, n2) {
+            let w = Math.floor(n1);
+            let h = Math.floor(n2);
+            if (w * h > 10000 || w > 200 || h > 200) return `<div class="text-red-500 font-bold text-center mt-10">Grille trop grande pour être affichée.</div>`;
+            const cs = 15; 
+            const width = w * cs;
+            const height = h * cs;
+            
+            let svg = `<svg viewBox="-5 -5 ${width + 10} ${height + 10}" class="w-full h-full max-h-[350px] shadow-sm bg-white rounded-lg" preserveAspectRatio="xMidYMid meet">`;
+            
+            // Fond et Bordure
+            svg += `<rect x="0" y="0" width="${width}" height="${height}" fill="#fffbeb" stroke="#7b3f00" stroke-width="1.5"/>`;
+            
+            // Lignes Verticales (fines)
+            for(let x = 1; x < w; x++) {
+                svg += `<line x1="${x*cs}" y1="0" x2="${x*cs}" y2="${height}" stroke="#7b3f00" stroke-width="0.5" stroke-opacity="0.5"/>`;
+            }
+            // Lignes Horizontales (fines)
+            for(let y = 1; y < h; y++) {
+                svg += `<line x1="0" y1="${y*cs}" x2="${width}" y2="${y*cs}" stroke="#7b3f00" stroke-width="0.5" stroke-opacity="0.5"/>`;
+            }
+            
+            svg += `</svg>`;
+            return svg;
+        }
+
+        function renderWorkspace(id, isCorrection = false, errors = {}) {
             let c = cardsData[id];
             const ws = document.getElementById(isCorrection ? `correct-grid-${id}` : `workspace-${id}`);
             if (!ws) return;
             
+            // ------------------------------------------------------------------------
+            // 1. MODE REPRÉSENTATION
+            // ------------------------------------------------------------------------
             if (globalState.mode === 'representation') {
                 let sym = c.op === '*' ? 'x' : (c.op === '/' ? '÷' : c.op);
+                let repHTML = '';
+                
+                if (c.op === '*') {
+                    repHTML = renderMultiplicationGrid(c.n1, c.n2);
+                } else {
+                    repHTML = `
+                        <div class="flex items-center justify-center gap-4 w-full flex-1 min-h-0">
+                            <div class="flex-1 h-full min-h-[150px]">${renderBlocksHTML(c.n1)}</div>
+                            <div class="text-4xl font-black text-[#960018] shrink-0">${sym}</div>
+                            <div class="flex-1 h-full min-h-[150px]">${renderBlocksHTML(c.n2)}</div>
+                        </div>
+                    `;
+                }
+
                 if (isCorrection) {
                     let isErr = errors.final;
                     let cl = isErr ? "border-red-500 bg-red-50 text-red-700" : "border-emerald-500 bg-emerald-50 text-emerald-700";
                     ws.innerHTML = `
                         <div class="flex flex-col items-center gap-4 w-full h-full p-2">
-                            <div class="flex items-center justify-center gap-4 w-full flex-1 min-h-0">
-                                <div class="flex-1 h-full min-h-[150px]">${renderBlocksHTML(c.n1)}</div>
-                                <div class="text-4xl font-black text-[#960018]">${sym}</div>
-                                <div class="flex-1 h-full min-h-[150px]">${renderBlocksHTML(c.n2)}</div>
-                            </div>
-                            <div class="w-full max-w-xs text-center p-4 rounded-2xl border-4 ${cl} font-black text-4xl shadow-lg">
+                            ${repHTML}
+                            <div class="w-full max-w-xs text-center p-4 rounded-2xl border-4 ${cl} font-black text-4xl shadow-lg mt-auto">
                                 ${c.ansStr}
                             </div>
                         </div>
@@ -649,13 +698,9 @@
                 } else {
                     ws.innerHTML = `
                         <div class="flex flex-col items-center gap-4 w-full h-full p-2">
-                            <div class="flex items-center justify-center gap-4 w-full flex-1 min-h-0">
-                                <div class="flex-1 h-full min-h-[150px]">${renderBlocksHTML(c.n1)}</div>
-                                <div class="text-4xl font-black text-[#960018]">${sym}</div>
-                                <div class="flex-1 h-full min-h-[150px]">${renderBlocksHTML(c.n2)}</div>
-                            </div>
-                            <div class="w-full max-w-xs">
-                                <input type="text" id="rep-ans-${id}" class="w-full border-4 border-slate-200 rounded-2xl p-4 text-center font-black text-3xl focus:border-[#960018] outline-none shadow-inner" placeholder="Résultat ?">
+                            ${repHTML}
+                            <div class="w-full max-w-xs mt-auto shrink-0">
+                                <input type="text" value="" id="rep-ans-${id}" class="w-full border-4 border-slate-200 rounded-2xl p-4 text-center font-black text-3xl focus:border-[#960018] outline-none shadow-inner" placeholder="Résultat ?">
                             </div>
                         </div>
                     `;
@@ -663,57 +708,9 @@
                 return;
             }
 
-            if (c.format === 'arbre') {
-                renderArbre(id, ws, isCorrection, errors);
-            } else if (c.op === '/') {
-                renderDivision(id, ws, isCorrection, errors);
-            } else {
-                ws.innerHTML = dessinerGrille(id, isCorrection, errors);
-            }
-        }
-
-        function renderDivision(id, ws, isCorrection, errors) {
-            let c = cardsData[id];
-            if (isCorrection) {
-                let qClass = "pt-2 font-black text-2xl tracking-widest w-full px-3 py-2 rounded-xl " + (errors.quo ? "bg-red-100 text-red-800 border-2 border-red-500" : "bg-blue-100 text-blue-800");
-                let rClass = "font-bold mt-4 inline-block px-4 py-1 rounded-full text-sm " + (errors.rem ? "bg-red-100 text-red-800 border-2 border-red-500" : "bg-emerald-100 text-emerald-700 border-2 border-emerald-300");
-
-                ws.innerHTML = `
-                    <div class="flex w-full max-w-[400px] mx-auto items-start font-mono">
-                        <div class="flex-1 pr-4 border-r-4 border-slate-800 text-right">
-                            <div class="tracking-[0.3em] font-black text-3xl text-slate-800 mb-8">${c.n1Str}</div>
-                            <div class="text-slate-400 italic text-xs mb-4">Calculs intermédiaires...</div>
-                            <div class="${rClass}">Reste : ${c.rem}</div>
-                        </div>
-                        <div class="flex-1 pl-4 flex flex-col items-start">
-                            <div class="border-b-4 border-slate-800 pb-2 w-full font-black text-3xl tracking-[0.3em] text-slate-800 mb-4">${c.n2Str}</div>
-                            <div class="${qClass}">${c.ansStr}</div>
-                        </div>
-                    </div>`;
-            } else {
-                ws.innerHTML = `
-                    <div class="flex w-full font-mono max-w-[450px] mx-auto min-h-[250px]">
-                        <div class="flex-1 pr-4 flex flex-col items-end border-r-4 border-slate-300 relative">
-                            <div class="tracking-[0.3em] font-black text-3xl mb-6 text-slate-800">${c.n1Str}</div>
-                            <textarea class="w-full flex-1 bg-white border-2 border-slate-200 rounded-2xl resize-none outline-none text-right text-base text-slate-500 custom-scrollbar p-3" placeholder="Sous-tractions..."></textarea>
-                            <div class="mt-4 flex items-center gap-3">
-                                <span class="font-black text-red-600 uppercase text-xs tracking-widest">Reste</span>
-                                <input type="number" step="any" id="rem-${id}" class="cell-input w-24 border-red-300 text-red-700 focus:border-red-600 shadow-sm" style="height:3rem; font-size:1.5rem;">
-                            </div>
-                        </div>
-                        <div class="flex-1 pl-4 flex flex-col relative">
-                            <div class="border-b-4 border-slate-800 pb-2 font-black text-3xl tracking-[0.3em] text-slate-800 mb-4">${c.n2Str}</div>
-                            <div class="pt-4">
-                                <input type="number" step="any" id="quo-${id}" class="cell-input w-full bg-blue-50 border-blue-300 text-blue-800 tracking-widest focus:border-blue-600 font-black shadow-sm" placeholder="Quotient" style="height:4rem; font-size:1.8rem;">
-                            </div>
-                        </div>
-                    </div>`;
-            }
-        }
-
-        function renderArbre(id, ws, isCorrection, errors) {
-            let c = cardsData[id];
-            
+            // ------------------------------------------------------------------------
+            // UTILITAIRES POUR L'ARBRE ET LA GRILLE
+            // ------------------------------------------------------------------------
             function getPlaceValuesMap(str) {
                 let pv = {};
                 let [intP, decP] = str.split(',');
@@ -741,7 +738,7 @@
                     let cl = isErr ? "text-red-600 border-red-500 bg-red-50" : "text-emerald-700 border-emerald-500 bg-emerald-50";
                     return `<div class="inline-block text-center border-b-2 font-bold ${cl} py-1 mx-1 shadow-sm" style="min-width:3rem; width:${w}">${expStr}</div>`;
                 } else {
-                    return `<input type="text" class="text-center border-b-2 border-slate-400 focus:border-[#960018] outline-none bg-transparent font-bold text-lg tree-part-inp-${id} mx-1" data-expected="${expStr}" data-power="${pwr}" style="min-width:3rem; width:${w}">`;
+                    return `<input type="text" value="" class="text-center border-b-2 border-slate-400 focus:border-[#960018] outline-none bg-transparent font-bold text-lg tree-part-inp-${id} mx-1" data-expected="${expStr}" data-power="${pwr}" style="min-width:3rem; width:${w}">`;
                 }
             };
 
@@ -753,145 +750,200 @@
                     let cl = isErr ? "text-red-600 border-red-500 bg-red-50" : "text-emerald-700 border-emerald-500 bg-emerald-50";
                     return `<div class="inline-block text-center border-b-2 font-black text-2xl ${cl} py-2 mx-1 shadow-sm" style="min-width:5rem; width:${w}">${expStr}</div>`;
                 } else {
-                    return `<input type="text" id="final-ans-${id}" class="text-center border-b-2 border-slate-400 focus:border-[#960018] outline-none bg-transparent font-black text-2xl mx-1" data-expected="${expStr}" style="min-width:5rem; width:${w}">`;
+                    return `<input type="text" value="" id="final-ans-${id}" class="text-center border-b-2 border-slate-400 focus:border-[#960018] outline-none bg-transparent font-black text-2xl mx-1" data-expected="${expStr}" style="min-width:5rem; width:${w}">`;
                 }
             };
 
-            let html = `<div class="flex flex-col items-center justify-center w-full font-mono gap-6 py-8 overflow-x-auto custom-scrollbar relative">`;
-
-            if (c.op === '+') {
-                let pv1 = getPlaceValuesMap(c.n1Str);
-                let pv2 = getPlaceValuesMap(c.n2Str);
-                let allPowers = Array.from(new Set([...Object.keys(pv1), ...Object.keys(pv2)])).map(Number).sort((a,b) => b - a);
-                allPowers = allPowers.filter(pwr => pv1[pwr] !== 0 || pv2[pwr] !== 0);
-                if (allPowers.length === 0) allPowers = [0];
-
-                // Line 1: Decomposed sums
-                let l1Html = `<div class="flex items-center tracking-wider whitespace-nowrap text-lg">`;
-                let sums = [];
-                allPowers.forEach((pwr, idx) => {
-                    let v1 = pv1[pwr] || 0;
-                    let v2 = pv2[pwr] || 0;
-                    sums.push(v1 + v2);
-                    if (idx > 0) l1Html += `<span class="text-slate-400 font-bold mx-3">+</span>`;
-                    l1Html += `( ${getInput(v1, 'a1_n1_'+pwr)} <span class="text-slate-400 mx-1">+</span> ${getInput(v2, 'a1_n2_'+pwr)} )`;
-                });
-                l1Html += `</div>`;
-                html += l1Html;
-
-                // Line 2: Intermediate results
-                let l2Html = `<div class="flex items-center tracking-wider whitespace-nowrap text-lg">`;
-                sums.forEach((s, idx) => {
-                    if (idx > 0) l2Html += `<span class="text-slate-400 font-bold mx-3">+</span>`;
-                    l2Html += getInput(parseFloat(s.toFixed(4)), 'a2_'+idx);
-                });
-                l2Html += `</div>`;
-                html += l2Html;
-
-                // Line 3: Final Total
-                html += `<div class="flex items-center tracking-wider mt-4">${getFinalInput(c.ans)}</div>`;
-            } 
-            else if (c.op === '*') {
-                // DISTRIBUTIVITY LOGIC
-                let n2StrClean = c.n2.toString().replace('.', ',');
-                let n2Digits = n2StrClean.replace(',', '').length;
-                
-                let decomposedStr, fixedNum;
-                // Decompose the multi-digit number, keep the 1-digit one fixed
-                if (n2Digits === 1) {
-                    decomposedStr = c.n1Str;
-                    fixedNum = c.n2;
-                } else {
-                    decomposedStr = c.n2Str;
-                    fixedNum = c.n1;
+            // ------------------------------------------------------------------------
+            // 2. MODE ARBRE
+            // ------------------------------------------------------------------------
+            if (c.format === 'arbre') {
+                if (c.op === '/') {
+                    ws.innerHTML = `<div class="text-[#960018] font-black text-xl md:text-2xl py-8 text-center flex items-center justify-center h-full w-full">Mode arbre indisponible</div>`;
+                    return;
                 }
 
-                let pv = getPlaceValuesMap(decomposedStr);
-                let powers = Object.keys(pv).map(Number).sort((a,b) => b - a).filter(pwr => pv[pwr] !== 0);
-                if (powers.length === 0) powers = [0];
+                let html = `<div class="flex flex-col items-center justify-center w-full font-mono gap-6 py-8 overflow-x-auto custom-scrollbar relative">`;
 
-                // Line 1: (Part1 x Fixed) + (Part2 x Fixed) ...
-                let l1Html = `<div class="flex items-center tracking-wider whitespace-nowrap text-lg">`;
-                powers.forEach((pwr, idx) => {
-                    let decVal = pv[pwr];
-                    if (idx > 0) l1Html += `<span class="text-slate-400 font-bold mx-3">+</span>`;
-                    l1Html += `( ${getInput(decVal, 'm1_dec_'+pwr)} <span class="text-slate-400 mx-1">x</span> ${getInput(fixedNum, 'm1_fix_'+pwr)} )`;
-                });
-                l1Html += `</div>`;
-                html += l1Html;
+                if (c.op === '+') {
+                    let pv1 = getPlaceValuesMap(c.n1Str);
+                    let pv2 = getPlaceValuesMap(c.n2Str);
+                    let allPowers = Array.from(new Set([...Object.keys(pv1), ...Object.keys(pv2)])).map(Number).sort((a,b) => b - a);
+                    allPowers = allPowers.filter(pwr => pv1[pwr] !== 0 || pv2[pwr] !== 0);
+                    if (allPowers.length === 0) allPowers = [0];
 
-                // Line 2: Partial products
-                let l2Html = `<div class="flex items-center tracking-wider whitespace-nowrap text-lg">`;
-                powers.forEach((pwr, idx) => {
-                    let decVal = pv[pwr];
-                    let prod = parseFloat((decVal * fixedNum).toFixed(4));
-                    if (idx > 0) l2Html += `<span class="text-slate-400 font-bold mx-3">+</span>`;
-                    l2Html += getInput(prod, 'm2_'+pwr);
-                });
-                l2Html += `</div>`;
-                html += l2Html;
+                    let l1Html = `<div class="flex items-center tracking-wider whitespace-nowrap text-lg">`;
+                    let sums = [];
+                    allPowers.forEach((pwr, idx) => {
+                        let v1 = pv1[pwr] || 0;
+                        let v2 = pv2[pwr] || 0;
+                        sums.push(v1 + v2);
+                        if (idx > 0) l1Html += `<span class="text-slate-400 font-bold mx-3">+</span>`;
+                        l1Html += `( ${getInput(v1, 'a1_n1_'+pwr)} <span class="text-slate-400 mx-1">+</span> ${getInput(v2, 'a1_n2_'+pwr)} )`;
+                    });
+                    l1Html += `</div>`;
+                    html += l1Html;
 
-                // Line 3: Final Total
-                html += `<div class="flex items-center tracking-wider mt-4">${getFinalInput(c.ans)}</div>`;
-            }
-            else if (c.op === '-') {
-                let pv2 = getPlaceValuesMap(c.n2Str);
-                let p2Powers = Object.keys(pv2).map(Number).sort((a,b) => b - a).filter(pwr => pv2[pwr] !== 0);
-                if (p2Powers.length === 0) p2Powers = [0];
+                    let l2Html = `<div class="flex items-center tracking-wider whitespace-nowrap text-lg">`;
+                    sums.forEach((s, idx) => {
+                        if (idx > 0) l2Html += `<span class="text-slate-400 font-bold mx-3">+</span>`;
+                        l2Html += getInput(parseFloat(s.toFixed(4)), 'a2_'+idx);
+                    });
+                    l2Html += `</div>`;
+                    html += l2Html;
 
-                // Line 1: N1 - Part1 - Part2 ...
-                let l1Html = `<div class="flex items-center tracking-wider whitespace-nowrap text-lg">`;
-                l1Html += `<span class="font-black text-slate-800 mr-3">${c.n1Str}</span>`;
-                p2Powers.forEach((pwr) => {
-                    l1Html += `<span class="text-slate-400 font-bold mx-3">-</span> ${getInput(pv2[pwr], 's1_'+pwr)}`;
-                });
-                l1Html += `</div>`;
-                html += l1Html;
-
-                // Successive subtractions
-                let currentTotal = c.n1;
-                for (let i = 0; i < p2Powers.length; i++) {
-                    currentTotal -= pv2[p2Powers[i]];
-                    currentTotal = parseFloat(currentTotal.toFixed(4));
+                    html += `<div class="flex items-center tracking-wider mt-4">${getFinalInput(c.ans)}</div>`;
+                } 
+                else if (c.op === '*') {
+                    let pv1 = getPlaceValuesMap(c.n1Str);
+                    let pv2 = getPlaceValuesMap(c.n2Str);
+                    let p1Powers = Object.keys(pv1).map(Number).sort((a,b) => b - a).filter(pwr => pv1[pwr] !== 0);
+                    let p2Powers = Object.keys(pv2).map(Number).sort((a,b) => b - a).filter(pwr => pv2[pwr] !== 0);
                     
-                    let lineHtml = `<div class="flex items-center tracking-wider whitespace-nowrap text-lg">`;
-                    if (i === p2Powers.length - 1) {
-                        lineHtml += getFinalInput(currentTotal);
-                    } else {
-                        lineHtml += getInput(currentTotal, 's2_'+i);
-                        for (let j = i + 1; j < p2Powers.length; j++) {
-                            let pStr = pv2[p2Powers[j]].toString().replace('.', ',');
-                            lineHtml += `<span class="text-slate-300 font-bold mx-3 opacity-50">-</span> <span class="text-slate-300 font-bold opacity-50">${pStr}</span>`;
+                    if (p1Powers.length === 0) p1Powers = [0];
+                    if (p2Powers.length === 0) p2Powers = [0];
+
+                    // REGLE DIDACTIQUE STRICTE :
+                    // Si N2 a 1 seul chiffre et que N1 en a plus, on décompose N1 (ex: 78x2 -> on décompose 78)
+                    // Sinon (N2 a >= 2 chiffres), on décompose N2 (ex: 134x13 -> on décompose 13)
+                    let isN1Decomposed = false;
+                    if (p2Powers.length === 1 && p1Powers.length > 1) {
+                        isN1Decomposed = true;
+                    }
+
+                    let powers = isN1Decomposed ? p1Powers : p2Powers;
+                    let pvDecomp = isN1Decomposed ? pv1 : pv2;
+                    let fixedNum = isN1Decomposed ? c.n2 : c.n1;
+
+                    let partialProducts = [];
+
+                    // Ligne 1: Distribution (... x ...) + (... x ...)
+                    let l1Html = `<div class="flex items-center tracking-wider whitespace-nowrap text-lg">`;
+                    powers.forEach((pwr, idx) => {
+                        let decVal = pvDecomp[pwr];
+                        let prod = parseFloat((isN1Decomposed ? (decVal * fixedNum) : (fixedNum * decVal)).toFixed(4));
+                        partialProducts.push(prod);
+                        
+                        if (idx > 0) l1Html += `<span class="text-slate-400 font-bold mx-2">+</span>`;
+                        
+                        if (isN1Decomposed) {
+                            l1Html += `( ${getInput(decVal, 'm1_dec_'+pwr)} <span class="text-slate-400 mx-1">x</span> ${getInput(fixedNum, 'm1_fix_'+pwr)} )`;
+                        } else {
+                            l1Html += `( ${getInput(fixedNum, 'm1_fix_'+pwr)} <span class="text-slate-400 mx-1">x</span> ${getInput(decVal, 'm1_dec_'+pwr)} )`;
+                        }
+                    });
+                    l1Html += `</div>`;
+                    html += l1Html;
+
+                    // Ligne 2: Somme des produits partiels (... + ...)
+                    let l2Html = `<div class="flex items-center tracking-wider whitespace-nowrap text-lg mt-4">`;
+                    powers.forEach((pwr, idx) => {
+                        if (idx > 0) l2Html += `<span class="text-slate-400 font-bold mx-3">+</span>`;
+                        l2Html += getInput(partialProducts[idx], 'm2_prod_'+pwr);
+                    });
+                    l2Html += `</div>`;
+                    html += l2Html;
+
+                    // Ligne 3: Résultat final
+                    html += `<div class="flex items-center tracking-wider mt-6 pt-4 border-t-2 border-slate-200 w-full justify-center">${getFinalInput(c.ans)}</div>`;
+                }
+                else if (c.op === '-') {
+                    let pv2 = getPlaceValuesMap(c.n2Str);
+                    let p2Powers = Object.keys(pv2).map(Number).sort((a,b) => b - a).filter(pwr => pv2[pwr] !== 0);
+                    if (p2Powers.length === 0) p2Powers = [0];
+
+                    let l1Html = `<div class="flex items-center tracking-wider whitespace-nowrap text-lg mb-2">`;
+                    l1Html += `<span class="font-black text-slate-800 mr-3">${c.n1Str}</span>`;
+                    p2Powers.forEach((pwr) => {
+                        l1Html += `<span class="text-slate-400 font-bold mx-3">-</span> ${getInput(pv2[pwr], 's1_'+pwr)}`;
+                    });
+                    l1Html += `</div>`;
+                    html += l1Html;
+
+                    let currentTotal = c.n1;
+                    for (let i = 0; i < p2Powers.length; i++) {
+                        currentTotal -= pv2[p2Powers[i]];
+                        currentTotal = parseFloat(currentTotal.toFixed(4));
+                        
+                        let lineHtml = `<div class="flex items-center tracking-wider whitespace-nowrap text-lg mt-2">`;
+                        if (i === p2Powers.length - 1) {
+                            html += `<div class="flex items-center tracking-wider mt-4 pt-4 border-t-2 border-slate-200 w-full justify-center">${getFinalInput(currentTotal)}</div>`;
+                        } else {
+                            lineHtml += getInput(currentTotal, 's2_'+i);
+                            for (let j = i + 1; j < p2Powers.length; j++) {
+                                let pStr = pv2[p2Powers[j]].toString().replace('.', ',');
+                                lineHtml += `<span class="text-slate-300 font-bold mx-3 opacity-50">-</span> <span class="text-slate-300 font-bold opacity-50">${pStr}</span>`;
+                            }
+                            lineHtml += `</div>`;
+                            html += lineHtml;
                         }
                     }
-                    lineHtml += `</div>`;
-                    html += lineHtml;
                 }
+
+                html += `</div>`;
+                ws.innerHTML = html;
+                return;
             }
 
-            html += `</div>`;
-            ws.innerHTML = html;
-        }
+            // ------------------------------------------------------------------------
+            // 3. MODE DIVISION POSÉE
+            // ------------------------------------------------------------------------
+            if (c.op === '/') {
+                if (isCorrection) {
+                    let qClass = "pt-2 font-black text-2xl tracking-widest w-full px-3 py-2 rounded-xl " + (errors.quo ? "bg-red-100 text-red-800 border-2 border-red-500" : "bg-blue-100 text-blue-800");
+                    let rClass = "font-bold mt-4 inline-block px-4 py-1 rounded-full text-sm " + (errors.rem ? "bg-red-100 text-red-800 border-2 border-red-500" : "bg-emerald-100 text-emerald-700 border-2 border-emerald-300");
 
-        function dessinerGrille(id, isCorrection, errors = {}) {
-            let c = cardsData[id];
+                    ws.innerHTML = `
+                        <div class="flex w-full max-w-[400px] mx-auto items-start font-mono">
+                            <div class="flex-1 pr-4 border-r-4 border-slate-800 text-right">
+                                <div class="tracking-[0.3em] font-black text-3xl text-slate-800 mb-8">${c.n1Str}</div>
+                                <div class="text-slate-400 italic text-xs mb-4">Calculs intermédiaires...</div>
+                                <div class="${rClass}">Reste : ${c.rem}</div>
+                            </div>
+                            <div class="flex-1 pl-4 flex flex-col items-start">
+                                <div class="border-b-4 border-slate-800 pb-2 w-full font-black text-3xl tracking-[0.3em] text-slate-800 mb-4">${c.n2Str}</div>
+                                <div class="${qClass}">${c.ansStr}</div>
+                            </div>
+                        </div>`;
+                } else {
+                    ws.innerHTML = `
+                        <div class="flex w-full font-mono max-w-[450px] mx-auto min-h-[250px]">
+                            <div class="flex-1 pr-4 flex flex-col items-end border-r-4 border-slate-300 relative">
+                                <div class="tracking-[0.3em] font-black text-3xl mb-6 text-slate-800">${c.n1Str}</div>
+                                <textarea class="w-full flex-1 bg-white border-2 border-slate-200 rounded-2xl resize-none outline-none text-right text-base text-slate-500 custom-scrollbar p-3" placeholder="Sous-tractions..."></textarea>
+                                <div class="mt-4 flex items-center gap-3">
+                                    <span class="font-black text-red-600 uppercase text-xs tracking-widest">Reste</span>
+                                    <input type="number" step="any" value="" id="rem-${id}" class="cell-input w-24 border-red-300 text-red-700 focus:border-red-600 shadow-sm" style="height:3rem; font-size:1.5rem;">
+                                </div>
+                            </div>
+                            <div class="flex-1 pl-4 flex flex-col relative">
+                                <div class="border-b-4 border-slate-800 pb-2 font-black text-3xl tracking-[0.3em] text-slate-800 mb-4">${c.n2Str}</div>
+                                <div class="pt-4">
+                                    <input type="number" step="any" value="" id="quo-${id}" class="cell-input w-full bg-blue-50 border-blue-300 text-blue-800 tracking-widest focus:border-blue-600 font-black shadow-sm" placeholder="Quotient" style="height:4rem; font-size:1.8rem;">
+                                </div>
+                            </div>
+                        </div>`;
+                }
+                return;
+            }
+
+            // ------------------------------------------------------------------------
+            // 4. MODE CALCUL POSÉ (+, -, *)
+            // ------------------------------------------------------------------------
             let cellW = globalState.playersCount >= 3 && !isCorrection ? '1.8rem' : '2.5rem';
-            let cellF = '1.25rem';
-            let cols = getCols(c.n1Str, c.n2Str);
-            
-            // For multiplication, we might need more columns
+            let cols = Math.max(c.n1Str.length, c.n2Str.length) + 2; 
             if (c.op === '*') {
                 cols = Math.max(c.n1Str.length, c.n2Str.length) + 4;
             }
 
             let html = `<div class="grid-math" style="grid-template-columns: repeat(${cols}, ${cellW}); column-gap: 0; row-gap: 0.2rem;">`;
 
-            // Carry Row
+            // Ligne des Retenues
             for (let i = 0; i < cols; i++) {
-                html += isCorrection ? `<div></div>` : `<input type="text" maxlength="1" class="cell-carry mb-2" style="width:1.5rem; height:1.5rem;">`;
+                html += isCorrection ? `<div></div>` : `<input type="text" value="" maxlength="1" class="cell-carry mb-2" style="width:1.5rem; height:1.5rem;">`;
             }
 
-            // Number 1 Row
+            // Ligne Nombre 1
             let s1Idx = cols - c.n1Str.length;
             for (let i = 0; i < cols; i++) {
                 if (i >= s1Idx) {
@@ -901,45 +953,54 @@
                         let cl = errors[`n1_${cIdx}`] ? "border-red-500 bg-red-100 text-red-900" : "border-emerald-500 bg-emerald-100 text-emerald-900";
                         html += `<div class="cell-input shadow-sm flex items-center justify-center font-black ${cl}" style="width:${cellW}">${char}</div>`;
                     } else if (c.format === 'trous' && c.mask.n1.includes(cIdx) && !isCorrection) {
-                        html += `<input type="text" maxlength="1" class="cell-input trou-inp-${id} border-orange-300 bg-orange-50" data-expected="${char}" data-pos="n1_${cIdx}" style="width:${cellW}">`;
+                        html += `<input type="text" value="" maxlength="1" class="cell-input trou-inp-${id} border-orange-300 bg-orange-50" data-expected="${char}" data-pos="n1_${cIdx}" style="width:${cellW}">`;
                     } else {
                         html += `<div class="cell-static ${char===','?'text-red-500':''}" style="width:${cellW}">${char}</div>`;
                     }
                 } else html += `<div></div>`;
             }
 
-            // Number 2 Row (with Operator)
+            // Ligne Nombre 2
             let s2Idx = cols - c.n2Str.length;
             for (let i = 0; i < cols; i++) {
-                let border = "pb-2 mb-2 w-full flex justify-center";
+                let cellClass = "pb-1 w-full flex justify-center";
                 let sym = c.op === '*' ? 'x' : c.op;
+                
                 if (i === 0) {
-                    html += `<div class="cell-static text-[#960018] font-black ${border}" style="width:${cellW}">${sym}</div>`;
+                    html += `<div class="${cellClass}"><div class="cell-static text-[#960018] font-black" style="width:${cellW}">${sym}</div></div>`;
                 } else if (i >= s2Idx) {
                     let cIdx = i - s2Idx;
                     let char = c.n2Str[cIdx];
                     if (isCorrection && c.format === 'trous' && c.mask.n2.includes(cIdx)) {
                         let cl = errors[`n2_${cIdx}`] ? "border-red-500 bg-red-100 text-red-900" : "border-emerald-500 bg-emerald-100 text-emerald-900";
-                        html += `<div class="${border}"><div class="cell-input shadow-sm flex items-center justify-center font-black ${cl}" style="width:${cellW}">${char}</div></div>`;
+                        html += `<div class="${cellClass}"><div class="cell-input shadow-sm flex items-center justify-center font-black ${cl}" style="width:${cellW}">${char}</div></div>`;
                     } else if (c.format === 'trous' && c.mask.n2.includes(cIdx) && !isCorrection) {
-                        html += `<div class="${border}"><input type="text" maxlength="1" class="cell-input trou-inp-${id} border-orange-300 bg-orange-50" data-expected="${char}" data-pos="n2_${cIdx}" style="width:${cellW}"></div>`;
+                        html += `<div class="${cellClass}"><input type="text" value="" maxlength="1" class="cell-input trou-inp-${id} border-orange-300 bg-orange-50" data-expected="${char}" data-pos="n2_${cIdx}" style="width:${cellW}"></div>`;
                     } else {
-                        html += `<div class="cell-static ${char===','?'text-red-500':''} ${border}" style="width:${cellW}">${char}</div>`;
+                        html += `<div class="${cellClass}"><div class="cell-static ${char===','?'text-red-500':''}" style="width:${cellW}">${char}</div></div>`;
                     }
-                } else html += `<div class="${border}"></div>`;
+                } else html += `<div class="${cellClass}"></div>`;
             }
 
-            // Multiplication Partial Products
+            // LIGNE NOIRE CONTINUE (Fine, sous le Nombre 2)
+            html += `<div style="grid-column: 1 / -1; width: 100%; height: 2px; background-color: black; margin: 4px 0; border-radius: 2px;"></div>`;
+
+            // Produits partiels de la multiplication
+            let isMultiDigitMult = false;
             if (c.op === '*') {
                 let s2Clean = c.n2Str.replace(',', '');
                 if (s2Clean.length > 1) {
+                    isMultiDigitMult = true;
                     for (let i = 0; i < s2Clean.length; i++) {
                         let digit = parseInt(s2Clean[s2Clean.length - 1 - i]);
                         let prod = (parseInt(c.n1Str.replace(',', '')) * digit).toString();
                         let prodPadded = prod.padStart(cols - i, ' ');
                         
                         for (let col = 0; col < cols; col++) {
-                            if (col < cols - i) {
+                            if (col === 0 && i === s2Clean.length - 1) {
+                                html += `<div class="cell-static text-[#960018] font-black" style="width:${cellW}">+</div>`;
+                            }
+                            else if (col < cols - i) {
                                 let val = prodPadded[col];
                                 if (isCorrection) {
                                     let cl = errors[`prod_${i}_${col}`] ? "border-red-500 bg-red-100 text-red-900" : "text-blue-700";
@@ -947,24 +1008,22 @@
                                 } else if (c.format === 'trous') {
                                     html += `<div class="cell-static text-blue-700" style="width:${cellW}">${val?.trim() ? val : ''}</div>`;
                                 } else {
-                                    html += `<input type="text" maxlength="1" class="cell-input border-slate-200 bg-white p-0 prod-inp-${id}" data-expected="${val?.trim() ? val : ''}" data-pos="prod_${i}_${col}" style="width:${cellW}; height:2.2rem;">`;
+                                    html += `<input type="text" value="" maxlength="1" class="cell-input border-slate-200 bg-white p-0 prod-inp-${id}" data-expected="${val?.trim() ? val : ''}" data-pos="prod_${i}_${col}" style="width:${cellW}; height:2.2rem;">`;
                                 }
                             } else {
                                 html += `<div class="cell-static text-slate-300 font-black opacity-50" style="width:${cellW}">0</div>`;
                             }
                         }
                     }
-                    // Final addition line
-                    for (let i = 0; i < cols; i++) {
-                        let border = "border-t-2 border-black border-solid pt-2 mt-2 w-full flex justify-center";
-                        html += i === 0 ? `<div class="cell-static text-[#960018] font-black ${border}" style="width:${cellW}">+</div>` : `<div class="${border}"></div>`;
-                    }
+                    // LIGNE NOIRE CONTINUE (Épaisse, juste avant le total pour les multi-rangs)
+                    html += `<div style="grid-column: 1 / -1; width: 100%; height: 4px; background-color: black; margin: 4px 0; border-radius: 2px;"></div>`;
                 }
             }
 
-            // Result Row
+            // Ligne Résultat
             let sAnsIdx = cols - c.ansStr.length;
-            let resBorder = "border-t-2 border-black border-solid w-full flex justify-center";
+            let resClass = "w-full flex justify-center py-1";
+
             for (let i = 0; i < cols; i++) {
                 let cellHtml = "";
                 if (i >= sAnsIdx) {
@@ -979,21 +1038,21 @@
                         cellHtml = `<div class="cell-input shadow-md flex items-center justify-center font-black ${cl}" style="width:${cellW}">${char}</div>`;
                     } else if (c.format === 'trous') {
                         if (c.mask.ans.includes(cIdx)) {
-                            cellHtml = `<input type="text" maxlength="1" class="cell-input trou-inp-${id} border-orange-300 bg-orange-50" data-expected="${char}" data-pos="ans_${cIdx}" style="width:${cellW}">`;
+                            cellHtml = `<input type="text" value="" maxlength="1" class="cell-input trou-inp-${id} border-orange-300 bg-orange-50" data-expected="${char}" data-pos="ans_${cIdx}" style="width:${cellW}">`;
                         } else {
                             cellHtml = `<div class="cell-static text-blue-800" style="width:${cellW}">${char}</div>`;
                         }
                     } else {
-                        cellHtml = `<input type="text" maxlength="1" class="cell-input pose-inp-${id} focus:border-[#960018]" data-pos="ans_${cIdx}" style="width:${cellW}">`;
+                        cellHtml = `<input type="text" value="" maxlength="1" class="cell-input pose-inp-${id} focus:border-[#960018]" data-pos="ans_${cIdx}" style="width:${cellW}">`;
                     }
                 } else {
                     cellHtml = `<div style="width:${cellW}"></div>`;
                 }
-                html += `<div class="${resBorder} pt-2 mt-2">${cellHtml}</div>`;
+                html += `<div class="${resClass}">${cellHtml}</div>`;
             }
 
             html += `</div>`;
-            return html;
+            ws.innerHTML = html;
         }
 
         function vider(id) {
