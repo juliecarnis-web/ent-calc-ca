@@ -131,7 +131,6 @@
                 <button data-mode="entrainement" class="mode-btn px-5 py-2 rounded-lg font-bold text-sm transition bg-slate-800 text-white shadow">Entraînement</button>
                 <button data-mode="libre" class="mode-btn px-5 py-2 rounded-lg font-bold text-sm transition text-slate-500">Libre</button>
                 <button data-mode="sprint" class="mode-btn px-5 py-2 rounded-lg font-bold text-sm transition text-slate-500">Sprint</button>
-                <button data-mode="representation" class="mode-btn px-5 py-2 rounded-lg font-bold text-sm transition text-slate-500">Représentation</button>
             </div>
 
             <div id="global-timer" class="hidden items-center gap-3 bg-red-50 px-4 py-2 rounded-xl border border-red-100 text-[#960018]">
@@ -302,6 +301,7 @@
                                 <option value="pose" ${c.format==='pose'?'selected':''}>Posé</option>
                                 <option value="arbre" ${c.format==='arbre'?'selected':''} ${c.op==='/'?'disabled':''}>Arbre</option>
                                 <option value="trous" ${c.format==='trous'?'selected':''} ${c.op==='/'?'disabled':''}>À trous</option>
+                                <option value="representation" ${c.format==='representation'?'selected':''} ${c.op==='/'?'disabled':''}>Représentation</option>
                             </select>
 
                             <select onchange="updateCardSettings(${id}, 'type', this.value)" class="bg-blue-50 border border-blue-200 text-blue-800 rounded-xl h-10 px-2 font-bold outline-none text-xs cursor-pointer">
@@ -590,7 +590,6 @@
             let offsetX = 50;
             let baseY = 250;
 
-            // Rendu des Milliers (Gros cubes 10x10x10)
             for(let i=0; i<m; i++) {
                 for(let z=0; z<10; z++) {
                     for(let y=0; y<10; y++) {
@@ -604,7 +603,6 @@
             }
             if(m > 0) offsetX += m * size * 25;
 
-            // Rendu des Centaines (Plaques 10x10 DEBOUT)
             for(let i=0; i<c; i++) {
                 let startX = offsetX + i*size*15;
                 for(let y=0; y<10; y++) {
@@ -615,7 +613,6 @@
             }
             if(c > 0) offsetX += c * size * 15 + 20;
 
-            // Rendu des Dizaines (Barres de 10)
             for(let i=0; i<d; i++) {
                 let startX = offsetX + i*size*4;
                 for(let y=0; y<10; y++) {
@@ -624,7 +621,6 @@
             }
             if(d > 0) offsetX += d * size * 4 + 20;
 
-            // Rendu des Unités (Petits cubes)
             for(let i=0; i<u; i++) {
                 svg += drawIsoCube(offsetX + (i%2)*size*2.5, baseY - Math.floor(i/2)*size*1.2, colors.u);
             }
@@ -668,7 +664,7 @@
             // ------------------------------------------------------------------------
             // 1. MODE REPRÉSENTATION
             // ------------------------------------------------------------------------
-            if (globalState.mode === 'representation') {
+            if (c.format === 'representation') {
                 let sym = c.op === '*' ? 'x' : (c.op === '/' ? '÷' : c.op);
                 let repHTML = '';
                 
@@ -804,8 +800,9 @@
                     if (p2Powers.length === 0) p2Powers = [0];
 
                     // REGLE DIDACTIQUE STRICTE :
-                    // Si N2 a 1 seul chiffre et que N1 en a plus, on décompose N1 (ex: 78x2 -> on décompose 78)
-                    // Sinon (N2 a >= 2 chiffres), on décompose N2 (ex: 134x13 -> on décompose 13)
+                    // N2 (le multiplicateur) determine la décomposition.
+                    // Si N2 a 1 seul chiffre et que N1 en a plus -> on décompose N1
+                    // Si N2 a 2 chiffres ou plus -> on décompose TOUJOURS N2
                     let isN1Decomposed = false;
                     if (p2Powers.length === 1 && p1Powers.length > 1) {
                         isN1Decomposed = true;
@@ -997,6 +994,7 @@
                         let prodPadded = prod.padStart(cols - i, ' ');
                         
                         for (let col = 0; col < cols; col++) {
+                            // Placer le '+' dans la première colonne de la dernière ligne des produits partiels
                             if (col === 0 && i === s2Clean.length - 1) {
                                 html += `<div class="cell-static text-[#960018] font-black" style="width:${cellW}">+</div>`;
                             }
@@ -1084,7 +1082,7 @@
                     }
                 }
             }
-            else if (globalState.mode === 'representation') {
+            else if (c.format === 'representation') {
                 let input = document.getElementById(`rep-ans-${id}`);
                 if (input) {
                     let val = input.value.trim().replace(',', '.');
