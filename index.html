@@ -563,13 +563,15 @@
         // ---------- MOTEUR ISOMETRIQUE 3D ----------
         function renderBlocksHTML(num) {
             if (num > 5000) return `<div class="text-red-500 font-bold text-center mt-10">Nombre trop grand (>5000)</div>`;
+            if (num === 0) return `<div class="text-slate-300 font-bold text-2xl flex items-center justify-center h-full">0</div>`;
+
             let n = Math.floor(num);
             const m = Math.floor(n / 1000); n %= 1000;
             const c = Math.floor(n / 100); n %= 100;
             const d = Math.floor(n / 10);
             const u = n % 10;
 
-            const size = 10; 
+            const size = 15; 
             const colors = {
                 u: { top: '#fef08a', left: '#fde047', right: '#facc15' },
                 d: { top: '#bfdbfe', left: '#60a5fa', right: '#2563eb' },
@@ -577,8 +579,15 @@
                 m: { top: '#fecaca', left: '#f87171', right: '#dc2626' }
             };
 
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+
             const drawIsoCube = (x, y, col) => {
                 const s = size;
+                if (x < minX) minX = x;
+                if (x + 2*s > maxX) maxX = x + 2*s;
+                if (y < minY) minY = y;
+                if (y + 2*s > maxY) maxY = y + 2*s;
+
                 return `<g transform="translate(${x},${y})">
                     <path d="M0,${s/2} L${s},0 L${2*s},${s/2} L${s},${s} Z" fill="${col.top}" stroke="rgba(0,0,0,0.2)" stroke-width="0.5"/>
                     <path d="M0,${s/2} L0,${s*1.2} L${s},${s*1.7} L${s},${s} Z" fill="${col.left}" stroke="rgba(0,0,0,0.2)" stroke-width="0.5"/>
@@ -587,8 +596,8 @@
             };
 
             let svg = '';
-            let offsetX = 50;
-            let baseY = 250;
+            let offsetX = 0;
+            let baseY = 0; 
 
             for(let i=0; i<m; i++) {
                 for(let z=0; z<10; z++) {
@@ -601,7 +610,7 @@
                     }
                 }
             }
-            if(m > 0) offsetX += m * size * 25;
+            if(m > 0) offsetX += m * size * 25 + size*2;
 
             for(let i=0; i<c; i++) {
                 let startX = offsetX + i*size*15;
@@ -611,7 +620,7 @@
                     }
                 }
             }
-            if(c > 0) offsetX += c * size * 15 + 20;
+            if(c > 0) offsetX += c * size * 15 + size*5;
 
             for(let i=0; i<d; i++) {
                 let startX = offsetX + i*size*4;
@@ -619,14 +628,15 @@
                     svg += drawIsoCube(startX, baseY - y*size, colors.d);
                 }
             }
-            if(d > 0) offsetX += d * size * 4 + 20;
+            if(d > 0) offsetX += d * size * 4 + size*5;
 
             for(let i=0; i<u; i++) {
                 svg += drawIsoCube(offsetX + (i%2)*size*2.5, baseY - Math.floor(i/2)*size*1.2, colors.u);
             }
             
-            let totalWidth = offsetX + size * 10;
-            return `<svg viewBox="-50 -100 ${Math.max(400, totalWidth + 100)} 500" class="w-full h-full max-h-[300px]" preserveAspectRatio="xMidYMid meet">${svg}</svg>`;
+            const padding = size;
+            const vBox = `${minX - padding} ${minY - padding} ${maxX - minX + 2*padding} ${maxY - minY + 2*padding}`;
+            return `<svg viewBox="${vBox}" class="w-full h-full drop-shadow-md" preserveAspectRatio="xMidYMid meet">${svg}</svg>`;
         }
 
         // ---------- MOTEUR GRILLE MULTIPLICATION ----------
@@ -634,26 +644,23 @@
             let w = Math.floor(n1);
             let h = Math.floor(n2);
             if (w * h > 10000 || w > 200 || h > 200) return `<div class="text-red-500 font-bold text-center mt-10">Grille trop grande pour être affichée.</div>`;
-            const cs = 15; 
+            const cs = 10; 
             const width = w * cs;
             const height = h * cs;
             
-            let svg = `<svg viewBox="-5 -5 ${width + 10} ${height + 10}" class="w-full h-full max-h-[350px] shadow-sm bg-white rounded-lg" preserveAspectRatio="xMidYMid meet">`;
+            let svg = `<svg viewBox="-2 -2 ${width + 4} ${height + 4}" class="w-full h-full max-h-[45vh] shadow-sm bg-white rounded-lg" preserveAspectRatio="xMidYMid meet">`;
             
-            // Fond et Bordure
             svg += `<rect x="0" y="0" width="${width}" height="${height}" fill="#fffbeb" stroke="#7b3f00" stroke-width="1.5"/>`;
             
-            // Lignes Verticales (fines)
             for(let x = 1; x < w; x++) {
                 svg += `<line x1="${x*cs}" y1="0" x2="${x*cs}" y2="${height}" stroke="#7b3f00" stroke-width="0.5" stroke-opacity="0.5"/>`;
             }
-            // Lignes Horizontales (fines)
             for(let y = 1; y < h; y++) {
                 svg += `<line x1="0" y1="${y*cs}" x2="${width}" y2="${y*cs}" stroke="#7b3f00" stroke-width="0.5" stroke-opacity="0.5"/>`;
             }
             
             svg += `</svg>`;
-            return svg;
+            return `<div class="flex-1 w-full min-h-0 flex items-center justify-center p-2">${svg}</div>`;
         }
 
         function renderWorkspace(id, isCorrection = false, errors = {}) {
@@ -672,10 +679,10 @@
                     repHTML = renderMultiplicationGrid(c.n1, c.n2);
                 } else {
                     repHTML = `
-                        <div class="flex items-center justify-center gap-4 w-full flex-1 min-h-0">
-                            <div class="flex-1 h-full min-h-[150px]">${renderBlocksHTML(c.n1)}</div>
-                            <div class="text-4xl font-black text-[#960018] shrink-0">${sym}</div>
-                            <div class="flex-1 h-full min-h-[150px]">${renderBlocksHTML(c.n2)}</div>
+                        <div class="flex flex-col md:flex-row items-center justify-center gap-4 w-full flex-1 min-h-0 p-2">
+                            <div class="flex-1 w-full h-full min-h-[100px] flex items-center justify-center">${renderBlocksHTML(c.n1)}</div>
+                            <div class="text-5xl font-black text-[#960018] shrink-0 drop-shadow-sm">${sym}</div>
+                            <div class="flex-1 w-full h-full min-h-[100px] flex items-center justify-center">${renderBlocksHTML(c.n2)}</div>
                         </div>
                     `;
                 }
@@ -684,18 +691,18 @@
                     let isErr = errors.final;
                     let cl = isErr ? "border-red-500 bg-red-50 text-red-700" : "border-emerald-500 bg-emerald-50 text-emerald-700";
                     ws.innerHTML = `
-                        <div class="flex flex-col items-center gap-4 w-full h-full p-2">
+                        <div class="flex flex-col items-center w-full h-full p-2">
                             ${repHTML}
-                            <div class="w-full max-w-xs text-center p-4 rounded-2xl border-4 ${cl} font-black text-4xl shadow-lg mt-auto">
+                            <div class="w-full max-w-xs text-center p-4 rounded-2xl border-4 ${cl} font-black text-4xl shadow-lg mt-4 shrink-0">
                                 ${c.ansStr}
                             </div>
                         </div>
                     `;
                 } else {
                     ws.innerHTML = `
-                        <div class="flex flex-col items-center gap-4 w-full h-full p-2">
+                        <div class="flex flex-col items-center w-full h-full p-2">
                             ${repHTML}
-                            <div class="w-full max-w-xs mt-auto shrink-0">
+                            <div class="w-full max-w-xs mt-4 shrink-0">
                                 <input type="text" value="" id="rep-ans-${id}" class="w-full border-4 border-slate-200 rounded-2xl p-4 text-center font-black text-3xl focus:border-[#960018] outline-none shadow-inner" placeholder="Résultat ?">
                             </div>
                         </div>
@@ -788,7 +795,7 @@
                     l2Html += `</div>`;
                     html += l2Html;
 
-                    html += `<div class="flex items-center tracking-wider mt-4">${getFinalInput(c.ans)}</div>`;
+                    html += `<div class="flex items-center tracking-wider mt-4 pt-4 border-t-2 border-slate-200 w-full justify-center">${getFinalInput(c.ans)}</div>`;
                 } 
                 else if (c.op === '*') {
                     let pv1 = getPlaceValuesMap(c.n1Str);
@@ -799,10 +806,6 @@
                     if (p1Powers.length === 0) p1Powers = [0];
                     if (p2Powers.length === 0) p2Powers = [0];
 
-                    // REGLE DIDACTIQUE STRICTE :
-                    // N2 (le multiplicateur) determine la décomposition.
-                    // Si N2 a 1 seul chiffre et que N1 en a plus -> on décompose N1
-                    // Si N2 a 2 chiffres ou plus -> on décompose TOUJOURS N2
                     let isN1Decomposed = false;
                     if (p2Powers.length === 1 && p1Powers.length > 1) {
                         isN1Decomposed = true;
@@ -814,7 +817,6 @@
 
                     let partialProducts = [];
 
-                    // Ligne 1: Distribution (... x ...) + (... x ...)
                     let l1Html = `<div class="flex items-center tracking-wider whitespace-nowrap text-lg">`;
                     powers.forEach((pwr, idx) => {
                         let decVal = pvDecomp[pwr];
@@ -832,7 +834,6 @@
                     l1Html += `</div>`;
                     html += l1Html;
 
-                    // Ligne 2: Somme des produits partiels (... + ...)
                     let l2Html = `<div class="flex items-center tracking-wider whitespace-nowrap text-lg mt-4">`;
                     powers.forEach((pwr, idx) => {
                         if (idx > 0) l2Html += `<span class="text-slate-400 font-bold mx-3">+</span>`;
@@ -841,7 +842,6 @@
                     l2Html += `</div>`;
                     html += l2Html;
 
-                    // Ligne 3: Résultat final
                     html += `<div class="flex items-center tracking-wider mt-6 pt-4 border-t-2 border-slate-200 w-full justify-center">${getFinalInput(c.ans)}</div>`;
                 }
                 else if (c.op === '-') {
@@ -979,7 +979,7 @@
                 } else html += `<div class="${cellClass}"></div>`;
             }
 
-            // LIGNE NOIRE CONTINUE (Fine, sous le Nombre 2)
+            // LIGNE NOIRE CONTINUE
             html += `<div style="grid-column: 1 / -1; width: 100%; height: 2px; background-color: black; margin: 4px 0; border-radius: 2px;"></div>`;
 
             // Produits partiels de la multiplication
@@ -1013,7 +1013,7 @@
                             }
                         }
                     }
-                    // LIGNE NOIRE CONTINUE (Épaisse, juste avant le total pour les multi-rangs)
+                    // LIGNE NOIRE CONTINUE ÉPAISSE
                     html += `<div style="grid-column: 1 / -1; width: 100%; height: 4px; background-color: black; margin: 4px 0; border-radius: 2px;"></div>`;
                 }
             }
