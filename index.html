@@ -51,13 +51,10 @@
         }
 
         .cell-input {
-            width: 2.5rem;
-            height: 2.5rem;
             border: 2px solid #e2e8f0;
             border-radius: 0.5rem;
             text-align: center;
             font-weight: 800;
-            font-size: 1.25rem;
             outline: none;
             transition: all 0.2s;
             background: white;
@@ -68,21 +65,15 @@
             z-index: 10;
         }
         .cell-static {
-            width: 2.5rem;
-            height: 2.5rem;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 800;
-            font-size: 1.25rem;
         }
         .cell-carry {
-            width: 1.5rem;
-            height: 1.5rem;
             border: 1px dashed #cbd5e1;
             border-radius: 0.25rem;
             text-align: center;
-            font-size: 0.75rem;
             font-weight: 700;
             color: #64748b;
             outline: none;
@@ -235,9 +226,10 @@
             globalState.playersCount = count;
             const container = document.getElementById('cards-container');
             
+            // Adaptation dynamique des largeurs de la grille selon le nombre de joueurs
             let gridClasses = {
-                1: 'grid-cols-1 max-w-4xl mx-auto',
-                2: 'grid-cols-1 lg:grid-cols-2 max-w-[98%] mx-auto',
+                1: 'grid-cols-1 max-w-5xl mx-auto',
+                2: 'grid-cols-1 xl:grid-cols-2 max-w-[95%] mx-auto',
                 3: 'grid-cols-1 lg:grid-cols-3 max-w-[98%] mx-auto',
                 4: 'grid-cols-1 lg:grid-cols-4 max-w-full px-2'
             };
@@ -274,8 +266,16 @@
             let c = cardsData[id];
             let opSymbol = c.op === '*' ? 'x' : (c.op === '/' ? '÷' : c.op);
             
+            // Variables dynamiques pour s'adapter à l'espace
+            let isSolo = globalState.playersCount === 1;
+            let isDuel = globalState.playersCount === 2;
+            
+            let bannerTextClass = isSolo ? 'text-4xl md:text-6xl' : (isDuel ? 'text-3xl md:text-5xl' : 'text-2xl md:text-3xl');
+            let bannerHeight = isSolo ? 'h-28' : (isDuel ? 'h-24' : 'h-20');
+            let cardMinHeight = isSolo ? 'min-h-[75vh]' : (isDuel ? 'min-h-[70vh]' : 'min-h-[650px]');
+
             return `
-            <div class="perspective-1000 relative w-full flex flex-col min-h-[650px]" id="card-container-${id}">
+            <div class="perspective-1000 relative w-full flex flex-col ${cardMinHeight}" id="card-container-${id}">
                 <div class="flipper w-full h-full absolute transform-style-3d">
                     
                     <!-- FRONT -->
@@ -309,7 +309,7 @@
                                 <option value="decimaux" ${c.type==='decimaux'?'selected':''}>Décimaux</option>
                             </select>
 
-                            <select onchange="updateCardSettings(${id}, 'limit', this.value)" class="bg-white border border-slate-300 rounded-xl h-10 px-2 font-bold text-slate-500 outline-none text-xs cursor-pointer">
+                            <select onchange="updateCardSettings(${id}, 'limit', this.value)" class="bg-white border border-slate-300 rounded-xl h-10 px-2 font-bold text-slate-500 outline-none text-xs cursor-pointer flex-1">
                                 <option value="10" ${c.limit==10?'selected':''}>&lt; 10</option>
                                 <option value="100" ${c.limit==100?'selected':''}>&lt; 100</option>
                                 <option value="1000" ${c.limit==1000?'selected':''}>&lt; 1 000</option>
@@ -324,8 +324,8 @@
                         </div>
                         
                         <!-- Banner Display -->
-                        <div class="bg-[#0f172a] rounded-2xl text-white mb-4 shadow-inner h-20 flex items-center justify-center shrink-0 w-full ${globalState.mode === 'libre' ? 'hidden' : ''}" id="banner-${id}">
-                            <h2 class="font-black tracking-widest text-center px-4 text-2xl md:text-3xl" id="op-display-${id}">---</h2>
+                        <div class="bg-[#0f172a] rounded-2xl text-white mb-4 shadow-inner flex items-center justify-center shrink-0 w-full ${bannerHeight} ${globalState.mode === 'libre' ? 'hidden' : ''}" id="banner-${id}">
+                            <h2 class="font-black tracking-widest text-center px-4 ${bannerTextClass}" id="op-display-${id}">---</h2>
                         </div>
                         
                         <!-- Libre Inputs -->
@@ -561,10 +561,8 @@
         }
 
         // ---------- MOTEUR ISOMETRIQUE 3D ----------
-        function renderBlocksHTML(num) {
+        function renderBlocksHTML(num, pCount) {
             if (num > 5000) return `<div class="text-red-500 font-bold text-center mt-10">Nombre trop grand (>5000)</div>`;
-            if (num === 0) return `<div class="text-slate-300 font-bold text-2xl flex items-center justify-center h-full">0</div>`;
-
             let n = Math.floor(num);
             const m = Math.floor(n / 1000); n %= 1000;
             const c = Math.floor(n / 100); n %= 100;
@@ -636,11 +634,13 @@
             
             const padding = size;
             const vBox = `${minX - padding} ${minY - padding} ${maxX - minX + 2*padding} ${maxY - minY + 2*padding}`;
-            return `<svg viewBox="${vBox}" class="w-full h-full drop-shadow-md" preserveAspectRatio="xMidYMid meet">${svg}</svg>`;
+            let maxHClass = pCount <= 2 ? 'max-h-[450px]' : 'max-h-[250px]';
+            
+            return `<svg viewBox="${vBox}" class="w-full h-full drop-shadow-md ${maxHClass}" preserveAspectRatio="xMidYMid meet">${svg}</svg>`;
         }
 
         // ---------- MOTEUR GRILLE MULTIPLICATION ----------
-        function renderMultiplicationGrid(n1, n2) {
+        function renderMultiplicationGrid(n1, n2, pCount) {
             let w = Math.floor(n1);
             let h = Math.floor(n2);
             if (w * h > 10000 || w > 200 || h > 200) return `<div class="text-red-500 font-bold text-center mt-10">Grille trop grande pour être affichée.</div>`;
@@ -648,7 +648,8 @@
             const width = w * cs;
             const height = h * cs;
             
-            let svg = `<svg viewBox="-2 -2 ${width + 4} ${height + 4}" class="w-full h-full max-h-[45vh] shadow-sm bg-white rounded-lg" preserveAspectRatio="xMidYMid meet">`;
+            let maxHClass = pCount <= 2 ? 'max-h-[50vh]' : 'max-h-[30vh]';
+            let svg = `<svg viewBox="-2 -2 ${width + 4} ${height + 4}" class="w-full h-full shadow-sm bg-white rounded-lg ${maxHClass}" preserveAspectRatio="xMidYMid meet">`;
             
             svg += `<rect x="0" y="0" width="${width}" height="${height}" fill="#fffbeb" stroke="#7b3f00" stroke-width="1.5"/>`;
             
@@ -668,6 +669,8 @@
             const ws = document.getElementById(isCorrection ? `correct-grid-${id}` : `workspace-${id}`);
             if (!ws) return;
             
+            let pCount = globalState.playersCount;
+
             // ------------------------------------------------------------------------
             // 1. MODE REPRÉSENTATION
             // ------------------------------------------------------------------------
@@ -675,14 +678,17 @@
                 let sym = c.op === '*' ? 'x' : (c.op === '/' ? '÷' : c.op);
                 let repHTML = '';
                 
+                let symFontClass = pCount === 1 ? 'text-7xl' : (pCount === 2 ? 'text-6xl' : 'text-5xl');
+                let resultBoxClass = pCount === 1 ? 'text-6xl p-6 max-w-md' : 'text-4xl p-4 max-w-xs';
+
                 if (c.op === '*') {
-                    repHTML = renderMultiplicationGrid(c.n1, c.n2);
+                    repHTML = renderMultiplicationGrid(c.n1, c.n2, pCount);
                 } else {
                     repHTML = `
                         <div class="flex flex-col md:flex-row items-center justify-center gap-4 w-full flex-1 min-h-0 p-2">
-                            <div class="flex-1 w-full h-full min-h-[100px] flex items-center justify-center">${renderBlocksHTML(c.n1)}</div>
-                            <div class="text-5xl font-black text-[#960018] shrink-0 drop-shadow-sm">${sym}</div>
-                            <div class="flex-1 w-full h-full min-h-[100px] flex items-center justify-center">${renderBlocksHTML(c.n2)}</div>
+                            <div class="flex-1 w-full h-full min-h-[100px] flex items-center justify-center">${renderBlocksHTML(c.n1, pCount)}</div>
+                            <div class="${symFontClass} font-black text-[#960018] shrink-0 drop-shadow-sm">${sym}</div>
+                            <div class="flex-1 w-full h-full min-h-[100px] flex items-center justify-center">${renderBlocksHTML(c.n2, pCount)}</div>
                         </div>
                     `;
                 }
@@ -693,7 +699,7 @@
                     ws.innerHTML = `
                         <div class="flex flex-col items-center w-full h-full p-2">
                             ${repHTML}
-                            <div class="w-full max-w-xs text-center p-4 rounded-2xl border-4 ${cl} font-black text-4xl shadow-lg mt-4 shrink-0">
+                            <div class="w-full text-center rounded-3xl border-4 ${cl} font-black shadow-lg mt-4 shrink-0 ${resultBoxClass}">
                                 ${c.ansStr}
                             </div>
                         </div>
@@ -702,8 +708,8 @@
                     ws.innerHTML = `
                         <div class="flex flex-col items-center w-full h-full p-2">
                             ${repHTML}
-                            <div class="w-full max-w-xs mt-4 shrink-0">
-                                <input type="text" value="" id="rep-ans-${id}" class="w-full border-4 border-slate-200 rounded-2xl p-4 text-center font-black text-3xl focus:border-[#960018] outline-none shadow-inner" placeholder="Résultat ?">
+                            <div class="w-full mt-4 shrink-0 ${resultBoxClass}">
+                                <input type="text" value="" id="rep-ans-${id}" class="w-full border-4 border-slate-200 rounded-3xl text-center font-black focus:border-[#960018] outline-none shadow-inner" style="padding: inherit; font-size: inherit;" placeholder="Résultat ?">
                             </div>
                         </div>
                     `;
@@ -733,6 +739,9 @@
                 return pv;
             }
 
+            let textBaseClass = pCount === 1 ? 'text-3xl' : (pCount === 2 ? 'text-2xl' : 'text-lg');
+            let textFinalClass = pCount === 1 ? 'text-5xl' : (pCount === 2 ? 'text-4xl' : 'text-2xl');
+
             const getInput = (expected, pwr) => {
                 let expStr = expected.toString().replace('.', ',');
                 let w = Math.max(3, expStr.length + 1) + 'ch';
@@ -741,7 +750,7 @@
                     let cl = isErr ? "text-red-600 border-red-500 bg-red-50" : "text-emerald-700 border-emerald-500 bg-emerald-50";
                     return `<div class="inline-block text-center border-b-2 font-bold ${cl} py-1 mx-1 shadow-sm" style="min-width:3rem; width:${w}">${expStr}</div>`;
                 } else {
-                    return `<input type="text" value="" class="text-center border-b-2 border-slate-400 focus:border-[#960018] outline-none bg-transparent font-bold text-lg tree-part-inp-${id} mx-1" data-expected="${expStr}" data-power="${pwr}" style="min-width:3rem; width:${w}">`;
+                    return `<input type="text" value="" class="text-center border-b-2 border-slate-400 focus:border-[#960018] outline-none bg-transparent font-bold tree-part-inp-${id} mx-1" data-expected="${expStr}" data-power="${pwr}" style="min-width:3rem; width:${w}">`;
                 }
             };
 
@@ -751,9 +760,9 @@
                 if (isCorrection) {
                     let isErr = errors.final;
                     let cl = isErr ? "text-red-600 border-red-500 bg-red-50" : "text-emerald-700 border-emerald-500 bg-emerald-50";
-                    return `<div class="inline-block text-center border-b-2 font-black text-2xl ${cl} py-2 mx-1 shadow-sm" style="min-width:5rem; width:${w}">${expStr}</div>`;
+                    return `<div class="inline-block text-center border-b-2 font-black ${cl} py-2 mx-1 shadow-sm" style="min-width:5rem; width:${w}">${expStr}</div>`;
                 } else {
-                    return `<input type="text" value="" id="final-ans-${id}" class="text-center border-b-2 border-slate-400 focus:border-[#960018] outline-none bg-transparent font-black text-2xl mx-1" data-expected="${expStr}" style="min-width:5rem; width:${w}">`;
+                    return `<input type="text" value="" id="final-ans-${id}" class="text-center border-b-2 border-slate-400 focus:border-[#960018] outline-none bg-transparent font-black mx-1" data-expected="${expStr}" style="min-width:5rem; width:${w}">`;
                 }
             };
 
@@ -766,7 +775,8 @@
                     return;
                 }
 
-                let html = `<div class="flex flex-col items-center justify-center w-full font-mono gap-6 py-8 overflow-x-auto custom-scrollbar relative">`;
+                let gapClass = pCount === 1 ? 'gap-10 py-12' : 'gap-6 py-8';
+                let html = `<div class="flex flex-col items-center justify-center w-full font-mono ${gapClass} overflow-x-auto custom-scrollbar relative">`;
 
                 if (c.op === '+') {
                     let pv1 = getPlaceValuesMap(c.n1Str);
@@ -775,7 +785,7 @@
                     allPowers = allPowers.filter(pwr => pv1[pwr] !== 0 || pv2[pwr] !== 0);
                     if (allPowers.length === 0) allPowers = [0];
 
-                    let l1Html = `<div class="flex items-center tracking-wider whitespace-nowrap text-lg">`;
+                    let l1Html = `<div class="flex items-center tracking-wider whitespace-nowrap ${textBaseClass}">`;
                     let sums = [];
                     allPowers.forEach((pwr, idx) => {
                         let v1 = pv1[pwr] || 0;
@@ -787,7 +797,7 @@
                     l1Html += `</div>`;
                     html += l1Html;
 
-                    let l2Html = `<div class="flex items-center tracking-wider whitespace-nowrap text-lg">`;
+                    let l2Html = `<div class="flex items-center tracking-wider whitespace-nowrap ${textBaseClass}">`;
                     sums.forEach((s, idx) => {
                         if (idx > 0) l2Html += `<span class="text-slate-400 font-bold mx-3">+</span>`;
                         l2Html += getInput(parseFloat(s.toFixed(4)), 'a2_'+idx);
@@ -795,7 +805,7 @@
                     l2Html += `</div>`;
                     html += l2Html;
 
-                    html += `<div class="flex items-center tracking-wider mt-4 pt-4 border-t-2 border-slate-200 w-full justify-center">${getFinalInput(c.ans)}</div>`;
+                    html += `<div class="flex items-center tracking-wider mt-4 pt-4 border-t-2 border-slate-200 w-full justify-center ${textFinalClass}">${getFinalInput(c.ans)}</div>`;
                 } 
                 else if (c.op === '*') {
                     let pv1 = getPlaceValuesMap(c.n1Str);
@@ -817,7 +827,7 @@
 
                     let partialProducts = [];
 
-                    let l1Html = `<div class="flex items-center tracking-wider whitespace-nowrap text-lg">`;
+                    let l1Html = `<div class="flex items-center tracking-wider whitespace-nowrap ${textBaseClass}">`;
                     powers.forEach((pwr, idx) => {
                         let decVal = pvDecomp[pwr];
                         let prod = parseFloat((isN1Decomposed ? (decVal * fixedNum) : (fixedNum * decVal)).toFixed(4));
@@ -834,7 +844,7 @@
                     l1Html += `</div>`;
                     html += l1Html;
 
-                    let l2Html = `<div class="flex items-center tracking-wider whitespace-nowrap text-lg mt-4">`;
+                    let l2Html = `<div class="flex items-center tracking-wider whitespace-nowrap ${textBaseClass} mt-4">`;
                     powers.forEach((pwr, idx) => {
                         if (idx > 0) l2Html += `<span class="text-slate-400 font-bold mx-3">+</span>`;
                         l2Html += getInput(partialProducts[idx], 'm2_prod_'+pwr);
@@ -842,14 +852,14 @@
                     l2Html += `</div>`;
                     html += l2Html;
 
-                    html += `<div class="flex items-center tracking-wider mt-6 pt-4 border-t-2 border-slate-200 w-full justify-center">${getFinalInput(c.ans)}</div>`;
+                    html += `<div class="flex items-center tracking-wider mt-6 pt-4 border-t-2 border-slate-200 w-full justify-center ${textFinalClass}">${getFinalInput(c.ans)}</div>`;
                 }
                 else if (c.op === '-') {
                     let pv2 = getPlaceValuesMap(c.n2Str);
                     let p2Powers = Object.keys(pv2).map(Number).sort((a,b) => b - a).filter(pwr => pv2[pwr] !== 0);
                     if (p2Powers.length === 0) p2Powers = [0];
 
-                    let l1Html = `<div class="flex items-center tracking-wider whitespace-nowrap text-lg mb-2">`;
+                    let l1Html = `<div class="flex items-center tracking-wider whitespace-nowrap ${textBaseClass} mb-2">`;
                     l1Html += `<span class="font-black text-slate-800 mr-3">${c.n1Str}</span>`;
                     p2Powers.forEach((pwr) => {
                         l1Html += `<span class="text-slate-400 font-bold mx-3">-</span> ${getInput(pv2[pwr], 's1_'+pwr)}`;
@@ -862,9 +872,9 @@
                         currentTotal -= pv2[p2Powers[i]];
                         currentTotal = parseFloat(currentTotal.toFixed(4));
                         
-                        let lineHtml = `<div class="flex items-center tracking-wider whitespace-nowrap text-lg mt-2">`;
+                        let lineHtml = `<div class="flex items-center tracking-wider whitespace-nowrap ${textBaseClass} mt-2">`;
                         if (i === p2Powers.length - 1) {
-                            html += `<div class="flex items-center tracking-wider mt-4 pt-4 border-t-2 border-slate-200 w-full justify-center">${getFinalInput(currentTotal)}</div>`;
+                            html += `<div class="flex items-center tracking-wider mt-4 pt-4 border-t-2 border-slate-200 w-full justify-center ${textFinalClass}">${getFinalInput(currentTotal)}</div>`;
                         } else {
                             lineHtml += getInput(currentTotal, 's2_'+i);
                             for (let j = i + 1; j < p2Powers.length; j++) {
@@ -886,37 +896,44 @@
             // 3. MODE DIVISION POSÉE
             // ------------------------------------------------------------------------
             if (c.op === '/') {
+                let n1Class = pCount === 1 ? "text-6xl" : (pCount === 2 ? "text-5xl" : "text-3xl");
+                let n2Class = pCount === 1 ? "text-5xl" : (pCount === 2 ? "text-4xl" : "text-3xl");
+                let inputH = pCount === 1 ? "5rem" : (pCount === 2 ? "4rem" : "3rem");
+                let inputF = pCount === 1 ? "2.5rem" : (pCount === 2 ? "2rem" : "1.5rem");
+                let quoH = pCount === 1 ? "6rem" : (pCount === 2 ? "5rem" : "4rem");
+                let quoF = pCount === 1 ? "3rem" : (pCount === 2 ? "2.5rem" : "1.8rem");
+
                 if (isCorrection) {
-                    let qClass = "pt-2 font-black text-2xl tracking-widest w-full px-3 py-2 rounded-xl " + (errors.quo ? "bg-red-100 text-red-800 border-2 border-red-500" : "bg-blue-100 text-blue-800");
-                    let rClass = "font-bold mt-4 inline-block px-4 py-1 rounded-full text-sm " + (errors.rem ? "bg-red-100 text-red-800 border-2 border-red-500" : "bg-emerald-100 text-emerald-700 border-2 border-emerald-300");
+                    let qClass = `pt-2 font-black tracking-widest w-full px-3 py-2 rounded-xl ${n2Class} ` + (errors.quo ? "bg-red-100 text-red-800 border-2 border-red-500" : "bg-blue-100 text-blue-800");
+                    let rClass = "font-bold mt-4 inline-block px-4 py-2 rounded-full text-xl " + (errors.rem ? "bg-red-100 text-red-800 border-2 border-red-500" : "bg-emerald-100 text-emerald-700 border-2 border-emerald-300");
 
                     ws.innerHTML = `
-                        <div class="flex w-full max-w-[400px] mx-auto items-start font-mono">
-                            <div class="flex-1 pr-4 border-r-4 border-slate-800 text-right">
-                                <div class="tracking-[0.3em] font-black text-3xl text-slate-800 mb-8">${c.n1Str}</div>
-                                <div class="text-slate-400 italic text-xs mb-4">Calculs intermédiaires...</div>
+                        <div class="flex w-full max-w-[80%] mx-auto items-start font-mono">
+                            <div class="flex-1 pr-6 border-r-4 border-slate-800 text-right">
+                                <div class="tracking-[0.3em] font-black text-slate-800 mb-8 ${n1Class}">${c.n1Str}</div>
+                                <div class="text-slate-400 italic text-sm mb-4">Calculs intermédiaires...</div>
                                 <div class="${rClass}">Reste : ${c.rem}</div>
                             </div>
-                            <div class="flex-1 pl-4 flex flex-col items-start">
-                                <div class="border-b-4 border-slate-800 pb-2 w-full font-black text-3xl tracking-[0.3em] text-slate-800 mb-4">${c.n2Str}</div>
+                            <div class="flex-1 pl-6 flex flex-col items-start">
+                                <div class="border-b-4 border-slate-800 pb-2 w-full font-black tracking-[0.3em] text-slate-800 mb-4 ${n2Class}">${c.n2Str}</div>
                                 <div class="${qClass}">${c.ansStr}</div>
                             </div>
                         </div>`;
                 } else {
                     ws.innerHTML = `
-                        <div class="flex w-full font-mono max-w-[450px] mx-auto min-h-[250px]">
-                            <div class="flex-1 pr-4 flex flex-col items-end border-r-4 border-slate-300 relative">
-                                <div class="tracking-[0.3em] font-black text-3xl mb-6 text-slate-800">${c.n1Str}</div>
-                                <textarea class="w-full flex-1 bg-white border-2 border-slate-200 rounded-2xl resize-none outline-none text-right text-base text-slate-500 custom-scrollbar p-3" placeholder="Sous-tractions..."></textarea>
-                                <div class="mt-4 flex items-center gap-3">
-                                    <span class="font-black text-red-600 uppercase text-xs tracking-widest">Reste</span>
-                                    <input type="number" step="any" value="" id="rem-${id}" class="cell-input w-24 border-red-300 text-red-700 focus:border-red-600 shadow-sm" style="height:3rem; font-size:1.5rem;">
+                        <div class="flex w-full font-mono max-w-[90%] mx-auto min-h-[250px]">
+                            <div class="flex-1 pr-6 flex flex-col items-end border-r-4 border-slate-300 relative">
+                                <div class="tracking-[0.3em] font-black mb-6 text-slate-800 ${n1Class}">${c.n1Str}</div>
+                                <textarea class="w-full flex-1 bg-white border-2 border-slate-200 rounded-2xl resize-none outline-none text-right text-xl text-slate-500 custom-scrollbar p-4" placeholder="Sous-tractions..."></textarea>
+                                <div class="mt-6 flex items-center gap-4">
+                                    <span class="font-black text-red-600 uppercase text-sm tracking-widest">Reste</span>
+                                    <input type="number" step="any" value="" id="rem-${id}" class="cell-input w-32 border-red-300 text-red-700 focus:border-red-600 shadow-sm" style="height:${inputH}; font-size:${inputF};">
                                 </div>
                             </div>
-                            <div class="flex-1 pl-4 flex flex-col relative">
-                                <div class="border-b-4 border-slate-800 pb-2 font-black text-3xl tracking-[0.3em] text-slate-800 mb-4">${c.n2Str}</div>
+                            <div class="flex-1 pl-6 flex flex-col relative">
+                                <div class="border-b-4 border-slate-800 pb-2 font-black tracking-[0.3em] text-slate-800 mb-6 ${n2Class}">${c.n2Str}</div>
                                 <div class="pt-4">
-                                    <input type="number" step="any" value="" id="quo-${id}" class="cell-input w-full bg-blue-50 border-blue-300 text-blue-800 tracking-widest focus:border-blue-600 font-black shadow-sm" placeholder="Quotient" style="height:4rem; font-size:1.8rem;">
+                                    <input type="number" step="any" value="" id="quo-${id}" class="cell-input w-full bg-blue-50 border-blue-300 text-blue-800 tracking-widest focus:border-blue-600 font-black shadow-sm" placeholder="Quotient" style="height:${quoH}; font-size:${quoF};">
                                 </div>
                             </div>
                         </div>`;
@@ -927,17 +944,25 @@
             // ------------------------------------------------------------------------
             // 4. MODE CALCUL POSÉ (+, -, *)
             // ------------------------------------------------------------------------
-            let cellW = globalState.playersCount >= 3 && !isCorrection ? '1.8rem' : '2.5rem';
+            let cellW = pCount === 1 ? '4rem' : (pCount === 2 ? '3.2rem' : '2.5rem');
+            let cellH = pCount === 1 ? '4rem' : (pCount === 2 ? '3.2rem' : '2.5rem');
+            let cellF = pCount === 1 ? '2rem' : (pCount === 2 ? '1.8rem' : '1.25rem');
+            let carryS = pCount === 1 ? '2rem' : (pCount === 2 ? '1.8rem' : '1.5rem');
+            let carryF = pCount === 1 ? '1.2rem' : (pCount === 2 ? '1rem' : '0.75rem');
+
+            let cellStyle = `width:${cellW}; height:${cellH}; font-size:${cellF};`;
+            let carryStyle = `width:${carryS}; height:${carryS}; font-size:${carryF};`;
+
             let cols = Math.max(c.n1Str.length, c.n2Str.length) + 2; 
             if (c.op === '*') {
                 cols = Math.max(c.n1Str.length, c.n2Str.length) + 4;
             }
 
-            let html = `<div class="grid-math" style="grid-template-columns: repeat(${cols}, ${cellW}); column-gap: 0; row-gap: 0.2rem;">`;
+            let html = `<div class="grid-math" style="grid-template-columns: repeat(${cols}, ${cellW}); column-gap: 0; row-gap: 0.3rem;">`;
 
             // Ligne des Retenues
             for (let i = 0; i < cols; i++) {
-                html += isCorrection ? `<div></div>` : `<input type="text" value="" maxlength="1" class="cell-carry mb-2" style="width:1.5rem; height:1.5rem;">`;
+                html += isCorrection ? `<div></div>` : `<input type="text" value="" maxlength="1" class="cell-carry mb-2" style="${carryStyle}">`;
             }
 
             // Ligne Nombre 1
@@ -948,11 +973,11 @@
                     let char = c.n1Str[cIdx];
                     if (isCorrection && c.format === 'trous' && c.mask.n1.includes(cIdx)) {
                         let cl = errors[`n1_${cIdx}`] ? "border-red-500 bg-red-100 text-red-900" : "border-emerald-500 bg-emerald-100 text-emerald-900";
-                        html += `<div class="cell-input shadow-sm flex items-center justify-center font-black ${cl}" style="width:${cellW}">${char}</div>`;
+                        html += `<div class="cell-input shadow-sm flex items-center justify-center font-black ${cl}" style="${cellStyle}">${char}</div>`;
                     } else if (c.format === 'trous' && c.mask.n1.includes(cIdx) && !isCorrection) {
-                        html += `<input type="text" value="" maxlength="1" class="cell-input trou-inp-${id} border-orange-300 bg-orange-50" data-expected="${char}" data-pos="n1_${cIdx}" style="width:${cellW}">`;
+                        html += `<input type="text" value="" maxlength="1" class="cell-input trou-inp-${id} border-orange-300 bg-orange-50" data-expected="${char}" data-pos="n1_${cIdx}" style="${cellStyle}">`;
                     } else {
-                        html += `<div class="cell-static ${char===','?'text-red-500':''}" style="width:${cellW}">${char}</div>`;
+                        html += `<div class="cell-static ${char===','?'text-red-500':''}" style="${cellStyle}">${char}</div>`;
                     }
                 } else html += `<div></div>`;
             }
@@ -964,23 +989,23 @@
                 let sym = c.op === '*' ? 'x' : c.op;
                 
                 if (i === 0) {
-                    html += `<div class="${cellClass}"><div class="cell-static text-[#960018] font-black" style="width:${cellW}">${sym}</div></div>`;
+                    html += `<div class="${cellClass}"><div class="cell-static text-[#960018] font-black" style="${cellStyle}">${sym}</div></div>`;
                 } else if (i >= s2Idx) {
                     let cIdx = i - s2Idx;
                     let char = c.n2Str[cIdx];
                     if (isCorrection && c.format === 'trous' && c.mask.n2.includes(cIdx)) {
                         let cl = errors[`n2_${cIdx}`] ? "border-red-500 bg-red-100 text-red-900" : "border-emerald-500 bg-emerald-100 text-emerald-900";
-                        html += `<div class="${cellClass}"><div class="cell-input shadow-sm flex items-center justify-center font-black ${cl}" style="width:${cellW}">${char}</div></div>`;
+                        html += `<div class="${cellClass}"><div class="cell-input shadow-sm flex items-center justify-center font-black ${cl}" style="${cellStyle}">${char}</div></div>`;
                     } else if (c.format === 'trous' && c.mask.n2.includes(cIdx) && !isCorrection) {
-                        html += `<div class="${cellClass}"><input type="text" value="" maxlength="1" class="cell-input trou-inp-${id} border-orange-300 bg-orange-50" data-expected="${char}" data-pos="n2_${cIdx}" style="width:${cellW}"></div>`;
+                        html += `<div class="${cellClass}"><input type="text" value="" maxlength="1" class="cell-input trou-inp-${id} border-orange-300 bg-orange-50" data-expected="${char}" data-pos="n2_${cIdx}" style="${cellStyle}"></div>`;
                     } else {
-                        html += `<div class="${cellClass}"><div class="cell-static ${char===','?'text-red-500':''}" style="width:${cellW}">${char}</div></div>`;
+                        html += `<div class="${cellClass}"><div class="cell-static ${char===','?'text-red-500':''}" style="${cellStyle}">${char}</div></div>`;
                     }
                 } else html += `<div class="${cellClass}"></div>`;
             }
 
             // LIGNE NOIRE CONTINUE
-            html += `<div style="grid-column: 1 / -1; width: 100%; height: 2px; background-color: black; margin: 4px 0; border-radius: 2px;"></div>`;
+            html += `<div style="grid-column: 1 / -1; width: 100%; height: 2px; background-color: black; margin: 6px 0; border-radius: 2px;"></div>`;
 
             // Produits partiels de la multiplication
             let isMultiDigitMult = false;
@@ -996,31 +1021,31 @@
                         for (let col = 0; col < cols; col++) {
                             // Placer le '+' dans la première colonne de la dernière ligne des produits partiels
                             if (col === 0 && i === s2Clean.length - 1) {
-                                html += `<div class="cell-static text-[#960018] font-black" style="width:${cellW}">+</div>`;
+                                html += `<div class="cell-static text-[#960018] font-black" style="${cellStyle}">+</div>`;
                             }
                             else if (col < cols - i) {
                                 let val = prodPadded[col];
                                 if (isCorrection) {
                                     let cl = errors[`prod_${i}_${col}`] ? "border-red-500 bg-red-100 text-red-900" : "text-blue-700";
-                                    html += `<div class="cell-static ${cl}" style="width:${cellW}">${val?.trim() ? val : ''}</div>`;
+                                    html += `<div class="cell-static ${cl}" style="${cellStyle}">${val?.trim() ? val : ''}</div>`;
                                 } else if (c.format === 'trous') {
-                                    html += `<div class="cell-static text-blue-700" style="width:${cellW}">${val?.trim() ? val : ''}</div>`;
+                                    html += `<div class="cell-static text-blue-700" style="${cellStyle}">${val?.trim() ? val : ''}</div>`;
                                 } else {
-                                    html += `<input type="text" value="" maxlength="1" class="cell-input border-slate-200 bg-white p-0 prod-inp-${id}" data-expected="${val?.trim() ? val : ''}" data-pos="prod_${i}_${col}" style="width:${cellW}; height:2.2rem;">`;
+                                    html += `<input type="text" value="" maxlength="1" class="cell-input border-slate-200 bg-white p-0 prod-inp-${id}" data-expected="${val?.trim() ? val : ''}" data-pos="prod_${i}_${col}" style="${cellStyle}">`;
                                 }
                             } else {
-                                html += `<div class="cell-static text-slate-300 font-black opacity-50" style="width:${cellW}">0</div>`;
+                                html += `<div class="cell-static text-slate-300 font-black opacity-50" style="${cellStyle}">0</div>`;
                             }
                         }
                     }
                     // LIGNE NOIRE CONTINUE ÉPAISSE
-                    html += `<div style="grid-column: 1 / -1; width: 100%; height: 4px; background-color: black; margin: 4px 0; border-radius: 2px;"></div>`;
+                    html += `<div style="grid-column: 1 / -1; width: 100%; height: 4px; background-color: black; margin: 6px 0; border-radius: 2px;"></div>`;
                 }
             }
 
             // Ligne Résultat
             let sAnsIdx = cols - c.ansStr.length;
-            let resClass = "w-full flex justify-center py-1";
+            let resClass = "w-full flex justify-center py-2";
 
             for (let i = 0; i < cols; i++) {
                 let cellHtml = "";
@@ -1033,18 +1058,18 @@
                         else if (c.format === 'pose') isErr = errors[`ans_${cIdx}`];
                         
                         let cl = isErr ? "border-red-500 bg-red-100 text-red-900" : "border-emerald-500 bg-emerald-100 text-emerald-900";
-                        cellHtml = `<div class="cell-input shadow-md flex items-center justify-center font-black ${cl}" style="width:${cellW}">${char}</div>`;
+                        cellHtml = `<div class="cell-input shadow-md flex items-center justify-center font-black ${cl}" style="${cellStyle}">${char}</div>`;
                     } else if (c.format === 'trous') {
                         if (c.mask.ans.includes(cIdx)) {
-                            cellHtml = `<input type="text" value="" maxlength="1" class="cell-input trou-inp-${id} border-orange-300 bg-orange-50" data-expected="${char}" data-pos="ans_${cIdx}" style="width:${cellW}">`;
+                            cellHtml = `<input type="text" value="" maxlength="1" class="cell-input trou-inp-${id} border-orange-300 bg-orange-50" data-expected="${char}" data-pos="ans_${cIdx}" style="${cellStyle}">`;
                         } else {
-                            cellHtml = `<div class="cell-static text-blue-800" style="width:${cellW}">${char}</div>`;
+                            cellHtml = `<div class="cell-static text-blue-800" style="${cellStyle}">${char}</div>`;
                         }
                     } else {
-                        cellHtml = `<input type="text" value="" maxlength="1" class="cell-input pose-inp-${id} focus:border-[#960018]" data-pos="ans_${cIdx}" style="width:${cellW}">`;
+                        cellHtml = `<input type="text" value="" maxlength="1" class="cell-input pose-inp-${id} focus:border-[#960018]" data-pos="ans_${cIdx}" style="${cellStyle}">`;
                     }
                 } else {
-                    cellHtml = `<div style="width:${cellW}"></div>`;
+                    cellHtml = `<div style="${cellStyle}"></div>`;
                 }
                 html += `<div class="${resClass}">${cellHtml}</div>`;
             }
@@ -1139,10 +1164,10 @@
 
             if (badge) {
                 if (isCorrect) {
-                    badge.className = "px-6 py-2 rounded-full font-black text-base shadow bg-emerald-500 text-white";
+                    badge.className = "px-8 py-3 rounded-full font-black text-xl shadow bg-emerald-500 text-white";
                     badge.innerHTML = `<i class="fa-solid fa-check mr-2"></i>BRAVO !`;
                 } else {
-                    badge.className = "px-6 py-2 rounded-full font-black text-base shadow bg-red-500 text-white";
+                    badge.className = "px-8 py-3 rounded-full font-black text-xl shadow bg-red-500 text-white";
                     badge.innerHTML = `<i class="fa-solid fa-xmark mr-2"></i>ERREUR`;
                 }
             }
