@@ -132,8 +132,9 @@
     </div>
 
     <!-- Main Workspace -->
-    <main class="flex-1 p-4 md:p-6 overflow-y-auto custom-scrollbar bg-slate-50">
-        <div id="cards-container" class="grid gap-6 w-full max-w-4xl mx-auto">
+    <main class="flex-1 p-4 md:p-6 overflow-y-auto custom-scrollbar bg-slate-50 flex flex-col items-center">
+        <!-- Conteneur qui prendra la largeur injectée par le JS -->
+        <div id="cards-container" class="w-full">
             <!-- Cards will be injected here -->
         </div>
     </main>
@@ -226,10 +227,9 @@
             globalState.playersCount = count;
             const container = document.getElementById('cards-container');
             
-            // Adaptation dynamique des largeurs de la grille selon le nombre de joueurs
             let gridClasses = {
-                1: 'grid-cols-1 max-w-5xl mx-auto',
-                2: 'grid-cols-1 xl:grid-cols-2 max-w-[95%] mx-auto',
+                1: 'grid-cols-1 max-w-[95%] mx-auto',
+                2: 'grid-cols-1 xl:grid-cols-2 max-w-[98%] mx-auto',
                 3: 'grid-cols-1 lg:grid-cols-3 max-w-[98%] mx-auto',
                 4: 'grid-cols-1 lg:grid-cols-4 max-w-full px-2'
             };
@@ -266,13 +266,12 @@
             let c = cardsData[id];
             let opSymbol = c.op === '*' ? 'x' : (c.op === '/' ? '÷' : c.op);
             
-            // Variables dynamiques pour s'adapter à l'espace
             let isSolo = globalState.playersCount === 1;
             let isDuel = globalState.playersCount === 2;
             
-            let bannerTextClass = isSolo ? 'text-4xl md:text-6xl' : (isDuel ? 'text-3xl md:text-5xl' : 'text-2xl md:text-3xl');
-            let bannerHeight = isSolo ? 'h-28' : (isDuel ? 'h-24' : 'h-20');
-            let cardMinHeight = isSolo ? 'min-h-[75vh]' : (isDuel ? 'min-h-[70vh]' : 'min-h-[650px]');
+            let bannerTextClass = isSolo ? 'text-5xl md:text-7xl' : (isDuel ? 'text-4xl md:text-5xl' : 'text-2xl md:text-3xl');
+            let bannerHeight = isSolo ? 'h-32 md:h-40' : (isDuel ? 'h-24 md:h-28' : 'h-20');
+            let cardMinHeight = isSolo ? 'min-h-[85vh]' : (isDuel ? 'min-h-[75vh]' : 'min-h-[650px]');
 
             return `
             <div class="perspective-1000 relative w-full flex flex-col ${cardMinHeight}" id="card-container-${id}">
@@ -282,34 +281,34 @@
                     <div class="front absolute w-full h-full bg-white rounded-3xl shadow-xl flex flex-col p-4 border-2 border-slate-100 overflow-hidden">
                         
                         <!-- Settings Bar -->
-                        <div class="bg-slate-100 rounded-2xl mb-4 flex flex-wrap items-center gap-2 p-2 border border-slate-200 shadow-sm">
-                            <select onchange="updateCardSettings(${id}, 'op', this.value)" class="bg-white border-2 border-[#960018] text-[#960018] rounded-xl h-10 px-2 font-black outline-none shadow-sm cursor-pointer">
+                        <div class="bg-slate-100 rounded-2xl mb-4 flex flex-wrap items-center gap-2 p-2 border border-slate-200 shadow-sm shrink-0">
+                            <select onchange="updateCardSettings(${id}, 'op', this.value)" class="bg-white border-2 border-[#960018] text-[#960018] rounded-xl h-12 px-3 text-lg font-black outline-none shadow-sm cursor-pointer">
                                 <option value="+" ${c.op==='+'?'selected':''}>+</option>
                                 <option value="-" ${c.op==='-'?'selected':''}>-</option>
                                 <option value="*" ${c.op==='*'?'selected':''}>x</option>
                                 <option value="/" ${c.op==='/'?'selected':''}>÷</option>
                             </select>
 
-                            <select onchange="updateCardSettings(${id}, 'rank', this.value)" id="rank-select-${id}" class="bg-white border border-slate-300 rounded-xl h-10 px-2 font-bold text-slate-700 outline-none text-xs cursor-pointer" style="display: ${c.op === '*' || c.op === '/' ? 'inline-block' : 'none'};">
+                            <select onchange="updateCardSettings(${id}, 'rank', this.value)" id="rank-select-${id}" class="bg-white border border-slate-300 rounded-xl h-12 px-3 font-bold text-slate-700 outline-none cursor-pointer" style="display: ${c.op === '*' || c.op === '/' ? 'inline-block' : 'none'};">
                                 <option value="1" ${c.rank==1?'selected':''}>1 rang</option>
                                 <option value="2" ${c.rank==2?'selected':''}>2 rangs</option>
                                 <option value="3" ${c.rank==3?'selected':''}>3 rangs</option>
                                 <option value="4" ${c.rank==4?'selected':''}>4 rangs</option>
                             </select>
 
-                            <select onchange="updateCardSettings(${id}, 'format', this.value)" id="format-select-${id}" class="bg-white border border-slate-300 rounded-xl h-10 px-2 font-bold text-slate-700 outline-none text-xs cursor-pointer">
+                            <select onchange="updateCardSettings(${id}, 'format', this.value)" id="format-select-${id}" class="bg-white border border-slate-300 rounded-xl h-12 px-3 font-bold text-slate-700 outline-none cursor-pointer">
                                 <option value="pose" ${c.format==='pose'?'selected':''}>Posé</option>
                                 <option value="arbre" ${c.format==='arbre'?'selected':''} ${c.op==='/'?'disabled':''}>Arbre</option>
                                 <option value="trous" ${c.format==='trous'?'selected':''} ${c.op==='/'?'disabled':''}>À trous</option>
                                 <option value="representation" ${c.format==='representation'?'selected':''} ${c.op==='/'?'disabled':''}>Représentation</option>
                             </select>
 
-                            <select onchange="updateCardSettings(${id}, 'type', this.value)" class="bg-blue-50 border border-blue-200 text-blue-800 rounded-xl h-10 px-2 font-bold outline-none text-xs cursor-pointer">
+                            <select onchange="updateCardSettings(${id}, 'type', this.value)" class="bg-blue-50 border border-blue-200 text-blue-800 rounded-xl h-12 px-3 font-bold outline-none cursor-pointer">
                                 <option value="entiers" ${c.type==='entiers'?'selected':''}>Entiers</option>
                                 <option value="decimaux" ${c.type==='decimaux'?'selected':''}>Décimaux</option>
                             </select>
 
-                            <select onchange="updateCardSettings(${id}, 'limit', this.value)" class="bg-white border border-slate-300 rounded-xl h-10 px-2 font-bold text-slate-500 outline-none text-xs cursor-pointer flex-1">
+                            <select onchange="updateCardSettings(${id}, 'limit', this.value)" class="bg-white border border-slate-300 rounded-xl h-12 px-3 font-bold text-slate-500 outline-none cursor-pointer flex-1">
                                 <option value="10" ${c.limit==10?'selected':''}>&lt; 10</option>
                                 <option value="100" ${c.limit==100?'selected':''}>&lt; 100</option>
                                 <option value="1000" ${c.limit==1000?'selected':''}>&lt; 1 000</option>
@@ -318,7 +317,7 @@
                                 <option value="1000000" ${c.limit==1000000?'selected':''}>&lt; 1 000 000</option>
                             </select>
 
-                            <button onclick="genererUnProbleme(${id})" class="bg-slate-800 text-white h-10 w-10 rounded-xl font-bold shadow hover:bg-slate-700 transition flex items-center justify-center" title="Nouveau calcul">
+                            <button onclick="genererUnProbleme(${id})" class="bg-slate-800 text-white h-12 w-12 rounded-xl text-xl font-bold shadow hover:bg-slate-700 transition flex items-center justify-center" title="Nouveau calcul">
                                 <i class="fa-solid fa-rotate-right"></i>
                             </button>
                         </div>
@@ -329,7 +328,7 @@
                         </div>
                         
                         <!-- Libre Inputs -->
-                        <div id="libre-inputs-${id}" class="${globalState.mode === 'libre' ? 'flex' : 'hidden'} justify-center items-center gap-3 mb-4 bg-slate-50 p-4 rounded-2xl border border-slate-200 flex-wrap">
+                        <div id="libre-inputs-${id}" class="${globalState.mode === 'libre' ? 'flex' : 'hidden'} justify-center items-center gap-3 mb-4 bg-slate-50 p-4 rounded-2xl border border-slate-200 flex-wrap shrink-0">
                             <input type="number" step="any" value="" id="libre-n1-${id}" placeholder="Nombre 1" class="w-full md:w-[40%] border-2 border-slate-300 rounded-xl p-3 text-center font-bold focus:border-[#960018] outline-none shadow-sm">
                             <span class="text-2xl font-black text-slate-400" id="libre-op-symbol-${id}">${opSymbol}</span>
                             <input type="number" step="any" value="" id="libre-n2-${id}" placeholder="Nombre 2" class="w-full md:w-[40%] border-2 border-slate-300 rounded-xl p-3 text-center font-bold focus:border-[#960018] outline-none shadow-sm">
@@ -338,17 +337,17 @@
                             </button>
                         </div>
 
-                        <!-- Workspace -->
-                        <div id="workspace-${id}" class="flex-1 bg-slate-50 rounded-3xl border-2 border-slate-200 flex flex-col items-center justify-center p-4 overflow-auto custom-scrollbar relative w-full min-h-[300px]">
+                        <!-- Workspace (Flex-1 permet de s'étendre verticalement) -->
+                        <div id="workspace-${id}" class="flex-1 bg-slate-50 rounded-3xl border-2 border-slate-200 flex flex-col p-4 md:p-6 overflow-auto custom-scrollbar relative w-full min-h-[300px]">
                             <!-- Grid or Tree injected here -->
                         </div>
 
                         <!-- Actions -->
                         <div class="flex gap-3 mt-4 shrink-0 w-full">
-                            <button onclick="corriger(${id})" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white text-xl font-black py-4 rounded-2xl shadow-lg transition transform hover:-translate-y-1 active:translate-y-0">
+                            <button onclick="corriger(${id})" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white text-2xl font-black py-4 rounded-2xl shadow-lg transition transform hover:-translate-y-1 active:translate-y-0">
                                 VÉRIFIER
                             </button>
-                            <button onclick="vider(${id})" class="w-20 bg-white border-2 border-slate-200 text-red-500 hover:bg-red-50 text-xl font-bold py-4 rounded-2xl shadow transition flex items-center justify-center">
+                            <button onclick="vider(${id})" class="w-24 bg-white border-2 border-slate-200 text-red-500 hover:bg-red-50 text-2xl font-bold py-4 rounded-2xl shadow transition flex items-center justify-center">
                                 <i class="fa-solid fa-eraser"></i>
                             </button>
                         </div>
@@ -356,17 +355,17 @@
 
                     <!-- BACK (Correction) -->
                     <div class="back absolute w-full h-full bg-white rounded-3xl shadow-xl flex flex-col p-4 border-2 border-slate-100 rotate-y-180 overflow-hidden">
-                        <div class="flex justify-between items-center mb-4 shrink-0 px-2">
-                            <h3 class="font-black text-2xl text-slate-800 uppercase tracking-widest italic">Correction</h3>
-                            <div id="correction-badge-${id}" class="px-6 py-2 rounded-full font-black text-base shadow text-white"></div>
+                        <div class="flex justify-between items-center mb-4 shrink-0 px-4 mt-2">
+                            <h3 class="font-black text-3xl text-slate-800 uppercase tracking-widest italic">Correction</h3>
+                            <div id="correction-badge-${id}" class="px-8 py-3 rounded-full font-black text-xl shadow text-white"></div>
                         </div>
 
                         <div class="flex-1 bg-emerald-50 border-2 border-emerald-100 rounded-3xl flex flex-col items-center justify-center overflow-auto relative p-4 w-full custom-scrollbar">
                             <div id="correct-grid-${id}" class="w-full h-full flex flex-col items-center justify-center origin-top p-2"></div>
                         </div>
 
-                        <button onclick="retourner(${id})" class="mt-4 shrink-0 w-full bg-slate-900 hover:bg-slate-800 text-white text-xl font-black py-5 rounded-2xl shadow-xl transition flex items-center justify-center gap-3 group">
-                            CONTINUER <i class="fa-solid fa-arrow-right group-hover:translate-x-2 transition"></i>
+                        <button onclick="retourner(${id})" class="mt-4 shrink-0 w-full bg-slate-900 hover:bg-slate-800 text-white text-2xl font-black py-6 rounded-2xl shadow-xl transition flex items-center justify-center gap-4 group">
+                            CONTINUER <i class="fa-solid fa-arrow-right group-hover:translate-x-3 transition"></i>
                         </button>
                     </div>
                 </div>
@@ -412,9 +411,9 @@
 
                 if (globalState.mode === 'libre') {
                     ws.innerHTML = `
-                        <div class="text-slate-300 font-bold text-center h-full flex flex-col items-center justify-center">
+                        <div class="text-slate-300 font-bold text-center h-full flex flex-col items-center justify-center m-auto">
                             <i class="fa-solid fa-pen-nib text-6xl mb-4 opacity-30"></i>
-                            <span class="text-lg uppercase tracking-widest">Saisissez vos nombres</span>
+                            <span class="text-xl uppercase tracking-widest">Saisissez vos nombres</span>
                         </div>`;
                     banner.classList.add('hidden');
                     libreInputs.classList.remove('hidden');
@@ -563,6 +562,8 @@
         // ---------- MOTEUR ISOMETRIQUE 3D ----------
         function renderBlocksHTML(num, pCount) {
             if (num > 5000) return `<div class="text-red-500 font-bold text-center mt-10">Nombre trop grand (>5000)</div>`;
+            if (num === 0) return `<div class="text-slate-300 font-bold text-2xl flex items-center justify-center h-full">0</div>`;
+
             let n = Math.floor(num);
             const m = Math.floor(n / 1000); n %= 1000;
             const c = Math.floor(n / 100); n %= 100;
@@ -634,6 +635,7 @@
             
             const padding = size;
             const vBox = `${minX - padding} ${minY - padding} ${maxX - minX + 2*padding} ${maxY - minY + 2*padding}`;
+            
             let maxHClass = pCount <= 2 ? 'max-h-[450px]' : 'max-h-[250px]';
             
             return `<svg viewBox="${vBox}" class="w-full h-full drop-shadow-md ${maxHClass}" preserveAspectRatio="xMidYMid meet">${svg}</svg>`;
@@ -678,7 +680,7 @@
                 let sym = c.op === '*' ? 'x' : (c.op === '/' ? '÷' : c.op);
                 let repHTML = '';
                 
-                let symFontClass = pCount === 1 ? 'text-7xl' : (pCount === 2 ? 'text-6xl' : 'text-5xl');
+                let symFontClass = pCount === 1 ? 'text-7xl md:text-9xl' : (pCount === 2 ? 'text-6xl md:text-7xl' : 'text-5xl');
                 let resultBoxClass = pCount === 1 ? 'text-6xl p-6 max-w-md' : 'text-4xl p-4 max-w-xs';
 
                 if (c.op === '*') {
@@ -739,8 +741,14 @@
                 return pv;
             }
 
-            let textBaseClass = pCount === 1 ? 'text-3xl' : (pCount === 2 ? 'text-2xl' : 'text-lg');
-            let textFinalClass = pCount === 1 ? 'text-5xl' : (pCount === 2 ? 'text-4xl' : 'text-2xl');
+            let isLargeNumber = c.limit >= 10000;
+            let textBaseClass = pCount === 1 
+                ? (isLargeNumber ? 'text-2xl md:text-3xl' : 'text-3xl md:text-4xl') 
+                : (pCount === 2 ? 'text-xl md:text-2xl' : 'text-lg md:text-xl');
+            
+            let textFinalClass = pCount === 1 
+                ? (isLargeNumber ? 'text-4xl md:text-5xl' : 'text-5xl md:text-6xl') 
+                : (pCount === 2 ? 'text-3xl md:text-4xl' : 'text-2xl md:text-3xl');
 
             const getInput = (expected, pwr) => {
                 let expStr = expected.toString().replace('.', ',');
@@ -750,7 +758,7 @@
                     let cl = isErr ? "text-red-600 border-red-500 bg-red-50" : "text-emerald-700 border-emerald-500 bg-emerald-50";
                     return `<div class="inline-block text-center border-b-2 font-bold ${cl} py-1 mx-1 shadow-sm" style="min-width:3rem; width:${w}">${expStr}</div>`;
                 } else {
-                    return `<input type="text" value="" class="text-center border-b-2 border-slate-400 focus:border-[#960018] outline-none bg-transparent font-bold tree-part-inp-${id} mx-1" data-expected="${expStr}" data-power="${pwr}" style="min-width:3rem; width:${w}">`;
+                    return `<input type="text" value="" class="text-center border-b-2 border-slate-400 focus:border-[#960018] outline-none bg-transparent font-bold tree-part-inp-${id} mx-1 px-1" data-expected="${expStr}" data-power="${pwr}" style="min-width:3rem; width:${w}">`;
                 }
             };
 
@@ -762,7 +770,7 @@
                     let cl = isErr ? "text-red-600 border-red-500 bg-red-50" : "text-emerald-700 border-emerald-500 bg-emerald-50";
                     return `<div class="inline-block text-center border-b-2 font-black ${cl} py-2 mx-1 shadow-sm" style="min-width:5rem; width:${w}">${expStr}</div>`;
                 } else {
-                    return `<input type="text" value="" id="final-ans-${id}" class="text-center border-b-2 border-slate-400 focus:border-[#960018] outline-none bg-transparent font-black mx-1" data-expected="${expStr}" style="min-width:5rem; width:${w}">`;
+                    return `<input type="text" value="" id="final-ans-${id}" class="text-center border-b-2 border-slate-400 focus:border-[#960018] outline-none bg-transparent font-black mx-1 px-1" data-expected="${expStr}" style="min-width:5rem; width:${w}">`;
                 }
             };
 
@@ -775,7 +783,7 @@
                     return;
                 }
 
-                let gapClass = pCount === 1 ? 'gap-10 py-12' : 'gap-6 py-8';
+                let gapClass = pCount === 1 ? 'gap-y-8 py-12' : 'gap-y-6 py-8';
                 let html = `<div class="flex flex-col items-center justify-center w-full font-mono ${gapClass} overflow-x-auto custom-scrollbar relative">`;
 
                 if (c.op === '+') {
@@ -785,27 +793,27 @@
                     allPowers = allPowers.filter(pwr => pv1[pwr] !== 0 || pv2[pwr] !== 0);
                     if (allPowers.length === 0) allPowers = [0];
 
-                    let l1Html = `<div class="flex items-center tracking-wider whitespace-nowrap ${textBaseClass}">`;
+                    let l1Html = `<div class="flex flex-wrap justify-center items-center tracking-wider ${textBaseClass} gap-y-3">`;
                     let sums = [];
                     allPowers.forEach((pwr, idx) => {
                         let v1 = pv1[pwr] || 0;
                         let v2 = pv2[pwr] || 0;
                         sums.push(v1 + v2);
-                        if (idx > 0) l1Html += `<span class="text-slate-400 font-bold mx-3">+</span>`;
-                        l1Html += `( ${getInput(v1, 'a1_n1_'+pwr)} <span class="text-slate-400 mx-1">+</span> ${getInput(v2, 'a1_n2_'+pwr)} )`;
+                        if (idx > 0) l1Html += `<span class="text-slate-400 font-bold mx-2 md:mx-4">+</span>`;
+                        l1Html += `<span class="whitespace-nowrap">( ${getInput(v1, 'a1_n1_'+pwr)} <span class="text-slate-400 mx-1">+</span> ${getInput(v2, 'a1_n2_'+pwr)} )</span>`;
                     });
                     l1Html += `</div>`;
                     html += l1Html;
 
-                    let l2Html = `<div class="flex items-center tracking-wider whitespace-nowrap ${textBaseClass}">`;
+                    let l2Html = `<div class="flex flex-wrap justify-center items-center tracking-wider ${textBaseClass} gap-y-3">`;
                     sums.forEach((s, idx) => {
-                        if (idx > 0) l2Html += `<span class="text-slate-400 font-bold mx-3">+</span>`;
-                        l2Html += getInput(parseFloat(s.toFixed(4)), 'a2_'+idx);
+                        if (idx > 0) l2Html += `<span class="text-slate-400 font-bold mx-2 md:mx-4">+</span>`;
+                        l2Html += `<span class="whitespace-nowrap">${getInput(parseFloat(s.toFixed(4)), 'a2_'+idx)}</span>`;
                     });
                     l2Html += `</div>`;
                     html += l2Html;
 
-                    html += `<div class="flex items-center tracking-wider mt-4 pt-4 border-t-2 border-slate-200 w-full justify-center ${textFinalClass}">${getFinalInput(c.ans)}</div>`;
+                    html += `<div class="flex flex-wrap justify-center items-center tracking-wider mt-4 pt-4 border-t-2 border-slate-200 w-full ${textFinalClass}">${getFinalInput(c.ans)}</div>`;
                 } 
                 else if (c.op === '*') {
                     let pv1 = getPlaceValuesMap(c.n1Str);
@@ -827,42 +835,42 @@
 
                     let partialProducts = [];
 
-                    let l1Html = `<div class="flex items-center tracking-wider whitespace-nowrap ${textBaseClass}">`;
+                    let l1Html = `<div class="flex flex-wrap justify-center items-center tracking-wider ${textBaseClass} gap-y-3">`;
                     powers.forEach((pwr, idx) => {
                         let decVal = pvDecomp[pwr];
                         let prod = parseFloat((isN1Decomposed ? (decVal * fixedNum) : (fixedNum * decVal)).toFixed(4));
                         partialProducts.push(prod);
                         
-                        if (idx > 0) l1Html += `<span class="text-slate-400 font-bold mx-2">+</span>`;
+                        if (idx > 0) l1Html += `<span class="text-slate-400 font-bold mx-2 md:mx-4">+</span>`;
                         
                         if (isN1Decomposed) {
-                            l1Html += `( ${getInput(decVal, 'm1_dec_'+pwr)} <span class="text-slate-400 mx-1">x</span> ${getInput(fixedNum, 'm1_fix_'+pwr)} )`;
+                            l1Html += `<span class="whitespace-nowrap">( ${getInput(decVal, 'm1_dec_'+pwr)} <span class="text-slate-400 mx-1">x</span> ${getInput(fixedNum, 'm1_fix_'+pwr)} )</span>`;
                         } else {
-                            l1Html += `( ${getInput(fixedNum, 'm1_fix_'+pwr)} <span class="text-slate-400 mx-1">x</span> ${getInput(decVal, 'm1_dec_'+pwr)} )`;
+                            l1Html += `<span class="whitespace-nowrap">( ${getInput(fixedNum, 'm1_fix_'+pwr)} <span class="text-slate-400 mx-1">x</span> ${getInput(decVal, 'm1_dec_'+pwr)} )</span>`;
                         }
                     });
                     l1Html += `</div>`;
                     html += l1Html;
 
-                    let l2Html = `<div class="flex items-center tracking-wider whitespace-nowrap ${textBaseClass} mt-4">`;
+                    let l2Html = `<div class="flex flex-wrap justify-center items-center tracking-wider ${textBaseClass} gap-y-3">`;
                     powers.forEach((pwr, idx) => {
-                        if (idx > 0) l2Html += `<span class="text-slate-400 font-bold mx-3">+</span>`;
-                        l2Html += getInput(partialProducts[idx], 'm2_prod_'+pwr);
+                        if (idx > 0) l2Html += `<span class="text-slate-400 font-bold mx-2 md:mx-4">+</span>`;
+                        l2Html += `<span class="whitespace-nowrap">${getInput(partialProducts[idx], 'm2_prod_'+pwr)}</span>`;
                     });
                     l2Html += `</div>`;
                     html += l2Html;
 
-                    html += `<div class="flex items-center tracking-wider mt-6 pt-4 border-t-2 border-slate-200 w-full justify-center ${textFinalClass}">${getFinalInput(c.ans)}</div>`;
+                    html += `<div class="flex flex-wrap justify-center items-center tracking-wider mt-4 pt-4 border-t-2 border-slate-200 w-full ${textFinalClass}">${getFinalInput(c.ans)}</div>`;
                 }
                 else if (c.op === '-') {
                     let pv2 = getPlaceValuesMap(c.n2Str);
                     let p2Powers = Object.keys(pv2).map(Number).sort((a,b) => b - a).filter(pwr => pv2[pwr] !== 0);
                     if (p2Powers.length === 0) p2Powers = [0];
 
-                    let l1Html = `<div class="flex items-center tracking-wider whitespace-nowrap ${textBaseClass} mb-2">`;
-                    l1Html += `<span class="font-black text-slate-800 mr-3">${c.n1Str}</span>`;
+                    let l1Html = `<div class="flex flex-wrap justify-center items-center tracking-wider ${textBaseClass} gap-y-3 mb-2">`;
+                    l1Html += `<span class="font-black text-slate-800 mr-2 md:mr-4 whitespace-nowrap">${c.n1Str}</span>`;
                     p2Powers.forEach((pwr) => {
-                        l1Html += `<span class="text-slate-400 font-bold mx-3">-</span> ${getInput(pv2[pwr], 's1_'+pwr)}`;
+                        l1Html += `<span class="whitespace-nowrap"><span class="text-slate-400 font-bold mx-2 md:mx-4">-</span> ${getInput(pv2[pwr], 's1_'+pwr)}</span>`;
                     });
                     l1Html += `</div>`;
                     html += l1Html;
@@ -872,14 +880,14 @@
                         currentTotal -= pv2[p2Powers[i]];
                         currentTotal = parseFloat(currentTotal.toFixed(4));
                         
-                        let lineHtml = `<div class="flex items-center tracking-wider whitespace-nowrap ${textBaseClass} mt-2">`;
+                        let lineHtml = `<div class="flex flex-wrap justify-center items-center tracking-wider ${textBaseClass} gap-y-3">`;
                         if (i === p2Powers.length - 1) {
-                            html += `<div class="flex items-center tracking-wider mt-4 pt-4 border-t-2 border-slate-200 w-full justify-center ${textFinalClass}">${getFinalInput(currentTotal)}</div>`;
+                            html += `<div class="flex flex-wrap justify-center items-center tracking-wider mt-4 pt-4 border-t-2 border-slate-200 w-full ${textFinalClass}">${getFinalInput(currentTotal)}</div>`;
                         } else {
-                            lineHtml += getInput(currentTotal, 's2_'+i);
+                            lineHtml += `<span class="whitespace-nowrap">${getInput(currentTotal, 's2_'+i)}</span>`;
                             for (let j = i + 1; j < p2Powers.length; j++) {
                                 let pStr = pv2[p2Powers[j]].toString().replace('.', ',');
-                                lineHtml += `<span class="text-slate-300 font-bold mx-3 opacity-50">-</span> <span class="text-slate-300 font-bold opacity-50">${pStr}</span>`;
+                                lineHtml += `<span class="whitespace-nowrap"><span class="text-slate-300 font-bold mx-2 md:mx-4 opacity-50">-</span> <span class="text-slate-300 font-bold opacity-50">${pStr}</span></span>`;
                             }
                             lineHtml += `</div>`;
                             html += lineHtml;
@@ -896,22 +904,22 @@
             // 3. MODE DIVISION POSÉE
             // ------------------------------------------------------------------------
             if (c.op === '/') {
-                let n1Class = pCount === 1 ? "text-6xl" : (pCount === 2 ? "text-5xl" : "text-3xl");
-                let n2Class = pCount === 1 ? "text-5xl" : (pCount === 2 ? "text-4xl" : "text-3xl");
-                let inputH = pCount === 1 ? "5rem" : (pCount === 2 ? "4rem" : "3rem");
-                let inputF = pCount === 1 ? "2.5rem" : (pCount === 2 ? "2rem" : "1.5rem");
-                let quoH = pCount === 1 ? "6rem" : (pCount === 2 ? "5rem" : "4rem");
-                let quoF = pCount === 1 ? "3rem" : (pCount === 2 ? "2.5rem" : "1.8rem");
+                let n1Class = pCount === 1 ? "text-5xl md:text-8xl" : (pCount === 2 ? "text-4xl md:text-6xl" : "text-3xl");
+                let n2Class = pCount === 1 ? "text-4xl md:text-7xl" : (pCount === 2 ? "text-3xl md:text-5xl" : "text-3xl");
+                let inputH = pCount === 1 ? "clamp(4rem, 6vw, 6rem)" : (pCount === 2 ? "clamp(3rem, 5vw, 5rem)" : "3rem");
+                let inputF = pCount === 1 ? "clamp(2rem, 3vw, 3rem)" : (pCount === 2 ? "clamp(1.5rem, 2.5vw, 2.5rem)" : "1.5rem");
+                let quoH = pCount === 1 ? "clamp(5rem, 8vw, 7rem)" : (pCount === 2 ? "clamp(4rem, 6vw, 6rem)" : "4rem");
+                let quoF = pCount === 1 ? "clamp(2.5rem, 4vw, 4rem)" : (pCount === 2 ? "clamp(2rem, 3vw, 3rem)" : "1.8rem");
 
                 if (isCorrection) {
                     let qClass = `pt-2 font-black tracking-widest w-full px-3 py-2 rounded-xl ${n2Class} ` + (errors.quo ? "bg-red-100 text-red-800 border-2 border-red-500" : "bg-blue-100 text-blue-800");
-                    let rClass = "font-bold mt-4 inline-block px-4 py-2 rounded-full text-xl " + (errors.rem ? "bg-red-100 text-red-800 border-2 border-red-500" : "bg-emerald-100 text-emerald-700 border-2 border-emerald-300");
+                    let rClass = "font-bold mt-4 inline-block px-4 py-2 rounded-full text-xl md:text-2xl " + (errors.rem ? "bg-red-100 text-red-800 border-2 border-red-500" : "bg-emerald-100 text-emerald-700 border-2 border-emerald-300");
 
                     ws.innerHTML = `
-                        <div class="flex w-full max-w-[80%] mx-auto items-start font-mono">
+                        <div class="flex w-full max-w-[80%] mx-auto items-start font-mono mt-4">
                             <div class="flex-1 pr-6 border-r-4 border-slate-800 text-right">
                                 <div class="tracking-[0.3em] font-black text-slate-800 mb-8 ${n1Class}">${c.n1Str}</div>
-                                <div class="text-slate-400 italic text-sm mb-4">Calculs intermédiaires...</div>
+                                <div class="text-slate-400 italic text-sm md:text-lg mb-4">Calculs intermédiaires...</div>
                                 <div class="${rClass}">Reste : ${c.rem}</div>
                             </div>
                             <div class="flex-1 pl-6 flex flex-col items-start">
@@ -921,12 +929,12 @@
                         </div>`;
                 } else {
                     ws.innerHTML = `
-                        <div class="flex w-full font-mono max-w-[90%] mx-auto min-h-[250px]">
+                        <div class="flex w-full font-mono max-w-[90%] mx-auto min-h-[300px] mt-4">
                             <div class="flex-1 pr-6 flex flex-col items-end border-r-4 border-slate-300 relative">
                                 <div class="tracking-[0.3em] font-black mb-6 text-slate-800 ${n1Class}">${c.n1Str}</div>
                                 <textarea class="w-full flex-1 bg-white border-2 border-slate-200 rounded-2xl resize-none outline-none text-right text-xl text-slate-500 custom-scrollbar p-4" placeholder="Sous-tractions..."></textarea>
                                 <div class="mt-6 flex items-center gap-4">
-                                    <span class="font-black text-red-600 uppercase text-sm tracking-widest">Reste</span>
+                                    <span class="font-black text-red-600 uppercase text-sm md:text-lg tracking-widest">Reste</span>
                                     <input type="number" step="any" value="" id="rem-${id}" class="cell-input w-32 border-red-300 text-red-700 focus:border-red-600 shadow-sm" style="height:${inputH}; font-size:${inputF};">
                                 </div>
                             </div>
@@ -944,12 +952,42 @@
             // ------------------------------------------------------------------------
             // 4. MODE CALCUL POSÉ (+, -, *)
             // ------------------------------------------------------------------------
-            let cellW = pCount === 1 ? '4rem' : (pCount === 2 ? '3.2rem' : '2.5rem');
-            let cellH = pCount === 1 ? '4rem' : (pCount === 2 ? '3.2rem' : '2.5rem');
-            let cellF = pCount === 1 ? '2rem' : (pCount === 2 ? '1.8rem' : '1.25rem');
-            let carryS = pCount === 1 ? '2rem' : (pCount === 2 ? '1.8rem' : '1.5rem');
-            let carryF = pCount === 1 ? '1.2rem' : (pCount === 2 ? '1rem' : '0.75rem');
+            // Dimensions élastiques avec clamp() adaptées spécifiquement
+            let n2Digits = 1;
+            if (c.op === '*') n2Digits = c.n2Str.replace(',', '').length;
 
+            let cellW, cellF, carryS, carryF, rowGap, marginLine;
+
+            if (c.op === '*' && n2Digits >= 2) {
+                rowGap = n2Digits >= 3 ? '0.1rem' : '0.2rem';
+                marginLine = n2Digits >= 3 ? '2px 0' : '4px 0';
+                
+                if (pCount === 1) {
+                    cellW = n2Digits === 2 ? 'clamp(2.5rem, 4vw, 3.5rem)' : (n2Digits === 3 ? 'clamp(2rem, 3vw, 2.8rem)' : 'clamp(1.5rem, 2vw, 2.2rem)');
+                    cellF = n2Digits === 2 ? 'clamp(1.2rem, 2vw, 1.8rem)' : (n2Digits === 3 ? 'clamp(1rem, 1.5vw, 1.4rem)' : 'clamp(0.8rem, 1.2vw, 1.1rem)');
+                    carryS = n2Digits === 2 ? 'clamp(1.8rem, 2.5vw, 2.5rem)' : (n2Digits === 3 ? 'clamp(1.5rem, 2vw, 2rem)' : 'clamp(1.2rem, 1.5vw, 1.5rem)');
+                    carryF = n2Digits === 2 ? 'clamp(0.9rem, 1.2vw, 1.2rem)' : (n2Digits === 3 ? 'clamp(0.8rem, 1vw, 1rem)' : 'clamp(0.7rem, 0.8vw, 0.9rem)');
+                } else if (pCount === 2) {
+                    cellW = n2Digits === 2 ? 'clamp(2rem, 3.5vw, 3rem)' : (n2Digits === 3 ? 'clamp(1.5rem, 2.5vw, 2.2rem)' : 'clamp(1.2rem, 2vw, 1.8rem)');
+                    cellF = n2Digits === 2 ? 'clamp(1rem, 1.8vw, 1.5rem)' : (n2Digits === 3 ? 'clamp(0.8rem, 1.2vw, 1.2rem)' : 'clamp(0.7rem, 1vw, 1rem)');
+                    carryS = n2Digits === 2 ? 'clamp(1.5rem, 2vw, 2rem)' : (n2Digits === 3 ? 'clamp(1.2rem, 1.5vw, 1.6rem)' : 'clamp(1rem, 1.2vw, 1.2rem)');
+                    carryF = n2Digits === 2 ? 'clamp(0.8rem, 1vw, 1rem)' : (n2Digits === 3 ? 'clamp(0.7rem, 0.9vw, 0.8rem)' : 'clamp(0.6rem, 0.8vw, 0.7rem)');
+                } else {
+                    cellW = n2Digits >= 3 ? 'clamp(1.2rem, 2vw, 1.8rem)' : 'clamp(1.8rem, 3vw, 2.5rem)';
+                    cellF = n2Digits >= 3 ? 'clamp(0.7rem, 1vw, 1rem)' : 'clamp(1rem, 1.5vw, 1.25rem)';
+                    carryS = n2Digits >= 3 ? 'clamp(1rem, 1.5vw, 1.2rem)' : 'clamp(1.2rem, 2vw, 1.5rem)';
+                    carryF = n2Digits >= 3 ? 'clamp(0.6rem, 0.8vw, 0.7rem)' : 'clamp(0.7rem, 1vw, 0.8rem)';
+                }
+            } else {
+                rowGap = '0.3rem';
+                marginLine = '6px 0';
+                cellW = pCount === 1 ? 'clamp(3rem, 5vw, 5rem)' : (pCount === 2 ? 'clamp(2.5rem, 4vw, 4rem)' : 'clamp(1.8rem, 3vw, 2.5rem)');
+                cellF = pCount === 1 ? 'clamp(1.5rem, 2.5vw, 2.5rem)' : (pCount === 2 ? 'clamp(1.25rem, 2vw, 2rem)' : 'clamp(1rem, 1.5vw, 1.25rem)');
+                carryS = pCount === 1 ? 'clamp(2rem, 3vw, 3rem)' : (pCount === 2 ? 'clamp(1.5rem, 2.5vw, 2.5rem)' : 'clamp(1.2rem, 2vw, 1.5rem)');
+                carryF = pCount === 1 ? 'clamp(1rem, 1.5vw, 1.5rem)' : (pCount === 2 ? 'clamp(0.8rem, 1.2vw, 1.2rem)' : 'clamp(0.7rem, 1vw, 0.8rem)');
+            }
+
+            let cellH = cellW; 
             let cellStyle = `width:${cellW}; height:${cellH}; font-size:${cellF};`;
             let carryStyle = `width:${carryS}; height:${carryS}; font-size:${carryF};`;
 
@@ -958,7 +996,7 @@
                 cols = Math.max(c.n1Str.length, c.n2Str.length) + 4;
             }
 
-            let html = `<div class="grid-math" style="grid-template-columns: repeat(${cols}, ${cellW}); column-gap: 0; row-gap: 0.3rem;">`;
+            let html = `<div class="grid-math mt-4" style="grid-template-columns: repeat(${cols}, ${cellW}); column-gap: 0.2rem; row-gap: ${rowGap};">`;
 
             // Ligne des Retenues
             for (let i = 0; i < cols; i++) {
@@ -1005,7 +1043,7 @@
             }
 
             // LIGNE NOIRE CONTINUE
-            html += `<div style="grid-column: 1 / -1; width: 100%; height: 2px; background-color: black; margin: 6px 0; border-radius: 2px;"></div>`;
+            html += `<div style="grid-column: 1 / -1; width: 100%; height: 2px; background-color: black; margin: ${marginLine}; border-radius: 2px;"></div>`;
 
             // Produits partiels de la multiplication
             let isMultiDigitMult = false;
@@ -1039,7 +1077,7 @@
                         }
                     }
                     // LIGNE NOIRE CONTINUE ÉPAISSE
-                    html += `<div style="grid-column: 1 / -1; width: 100%; height: 4px; background-color: black; margin: 6px 0; border-radius: 2px;"></div>`;
+                    html += `<div style="grid-column: 1 / -1; width: 100%; height: 4px; background-color: black; margin: ${marginLine}; border-radius: 2px;"></div>`;
                 }
             }
 
