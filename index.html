@@ -137,6 +137,7 @@
 
     <!-- Main Workspace -->
     <main class="flex-1 p-2 md:p-6 overflow-y-auto custom-scrollbar bg-slate-50 flex flex-col items-center">
+        <!-- Conteneur qui prendra la largeur injectée par le JS -->
         <div id="cards-container" class="w-full">
             <!-- Cards will be injected here -->
         </div>
@@ -181,6 +182,7 @@
                     initAllGames();
                 });
             });
+            // La gestion du style des boutons .player-btn est désormais dans setPlayers()
         }
 
         function startTimer() {
@@ -216,9 +218,21 @@
 
         function setPlayers(count) {
             globalState.playersCount = count;
+            
+            // Mise à jour de l'apparence des boutons de joueurs
+            document.querySelectorAll('.player-btn').forEach(btn => {
+                if (parseInt(btn.dataset.players) === count) {
+                    btn.classList.remove('text-white');
+                    btn.classList.add('bg-white', 'text-[#960018]', 'shadow');
+                } else {
+                    btn.classList.remove('bg-white', 'text-[#960018]', 'shadow');
+                    btn.classList.add('text-white');
+                }
+            });
+
             const container = document.getElementById('cards-container');
             
-            // Adaptation extrêmement dynamique des largeurs de la grille
+            // Adaptation dynamique des largeurs de la grille selon le nombre de joueurs
             let gridClasses = {
                 1: 'grid-cols-1 max-w-[95%] lg:max-w-5xl mx-auto',
                 2: 'grid-cols-1 xl:grid-cols-2 max-w-[98%] mx-auto',
@@ -314,9 +328,9 @@
                             </button>
                         </div>
                         
-                        <!-- Banner Display -->
-                        <div class="bg-[#0f172a] rounded-xl text-white mb-3 shadow-inner flex items-center justify-center shrink-0 w-full h-16 md:h-24 ${globalState.mode === 'libre' ? 'hidden' : ''}" id="banner-${id}" style="container-type: inline-size;">
-                            <h2 class="font-black tracking-widest text-center px-4 text-[clamp(1.5rem,6cqi,4rem)]" id="op-display-${id}">---</h2>
+                        <!-- Banner Display - Utilisation des cqi -->
+                        <div class="bg-[#0f172a] rounded-xl text-white mb-3 shadow-inner flex items-center justify-center shrink-0 w-full h-[clamp(4rem,15cqi,8rem)] ${globalState.mode === 'libre' ? 'hidden' : ''}" id="banner-${id}" style="container-type: inline-size;">
+                            <h2 class="font-black tracking-widest text-center px-4 text-[clamp(1.5rem,8cqi,5rem)]" id="op-display-${id}">---</h2>
                         </div>
                         
                         <!-- Libre Inputs -->
@@ -553,7 +567,7 @@
 
         // ---------- MOTEUR ISOMETRIQUE 3D ----------
         function renderBlocksHTML(num) {
-            if (num > 5000) return `<div class="text-red-500 font-bold text-center mt-10">Nombre trop grand (>5000)</div>`;
+            if (num > 5000) return `<div class="text-red-500 font-bold text-center w-full">Trop grand (>5000)</div>`;
             if (num === 0) return `<div class="text-slate-300 font-bold text-2xl m-auto">0</div>`;
 
             let n = Math.floor(num);
@@ -627,6 +641,7 @@
             
             const padding = size;
             const vBox = `${minX - padding} ${minY - padding} ${maxX - minX + 2*padding} ${maxY - minY + 2*padding}`;
+            
             let maxHStyle = `max-height: clamp(150px, 40cqi, 500px);`;
             
             return `<svg viewBox="${vBox}" class="w-full h-full drop-shadow-md" style="${maxHStyle}" preserveAspectRatio="xMidYMid meet">${svg}</svg>`;
@@ -703,7 +718,7 @@
             }
 
             // ------------------------------------------------------------------------
-            // UTILITAIRES POUR L'ARBRE ET LA GRILLE (Technologie CQI magique)
+            // UTILITAIRES POUR L'ARBRE ET LA GRILLE (Technologie CQI)
             // ------------------------------------------------------------------------
             function getPlaceValuesMap(str) {
                 let pv = {};
@@ -724,10 +739,9 @@
                 return pv;
             }
 
-            const getInput = (expected, pwr, wFactor = 1) => {
+            const getInput = (expected, pwr) => {
                 let expStr = expected.toString().replace('.', ',');
-                // Calcul dynamique de la largeur du champ en 'ch' (caractères)
-                let w = Math.max(1, expStr.length) + 'ch';
+                let w = Math.max(3, expStr.length + 1) + 'ch';
                 if (isCorrection) {
                     let isErr = errors[`part_${pwr}`];
                     let cl = isErr ? "text-red-600 border-red-500 bg-red-50" : "text-emerald-700 border-emerald-500 bg-emerald-50";
@@ -750,7 +764,7 @@
             };
 
             // ------------------------------------------------------------------------
-            // 2. MODE ARBRE
+            // 2. MODE ARBRE (Avec "flex-nowrap" pour 1 étape = 1 ligne garantie)
             // ------------------------------------------------------------------------
             if (c.format === 'arbre') {
                 if (c.op === '/') {
@@ -767,7 +781,6 @@
                     allPowers = allPowers.filter(pwr => pv1[pwr] !== 0 || pv2[pwr] !== 0);
                     if (allPowers.length === 0) allPowers = [0];
 
-                    // Calcul de la taille de police dynamique en fonction du nombre de termes pour GARANTIR 1 étape = 1 ligne
                     let cqiFactor = Math.min(Math.max(100 / (allPowers.length * 15), 1.5), 5);
                     let textBaseStyle = `font-size: clamp(0.5rem, ${cqiFactor}cqi, 2.5rem); white-space: nowrap; line-height: 1.5;`;
                     let textFinalStyle = `font-size: clamp(0.8rem, ${cqiFactor * 1.5}cqi, 3.5rem); white-space: nowrap; line-height: 1.5;`;
@@ -804,7 +817,9 @@
                     if (p2Powers.length === 0) p2Powers = [0];
 
                     let isN1Decomposed = false;
-                    if (p2Powers.length === 1 && p1Powers.length > 1) isN1Decomposed = true;
+                    if (p2Powers.length === 1 && p1Powers.length > 1) {
+                        isN1Decomposed = true;
+                    }
 
                     let powers = isN1Decomposed ? p1Powers : p2Powers;
                     let pvDecomp = isN1Decomposed ? pv1 : pv2;
@@ -941,9 +956,9 @@
             if (c.op === '*') cols = Math.max(c.n1Str.length, c.n2Str.length) + 4;
             
             // Calcul mathématique d'une largeur de cellule adaptative !
-            let dynamicW = 85 / cols; 
+            let dynamicW = 90 / cols; 
             
-            let cellW = `clamp(1.2rem, ${dynamicW}cqi, 4.5rem)`;
+            let cellW = `clamp(1.2rem, ${dynamicW}cqi, 4rem)`;
             let cellH = cellW; 
             let cellF = `clamp(0.8rem, ${dynamicW * 0.55}cqi, 2.5rem)`;
             let carryS = `clamp(1rem, ${dynamicW * 0.6}cqi, 2.5rem)`;
@@ -999,7 +1014,7 @@
             }
 
             // LIGNE NOIRE CONTINUE
-            html += `<div style="grid-column: 1 / -1; width: 100%; height: clamp(2px, 0.5cqi, 4px); background-color: black; border-radius: 2px;"></div>`;
+            html += `<div style="grid-column: 1 / -1; width: 100%; height: clamp(2px, 0.5cqi, 4px); background-color: black; margin: 2px 0; border-radius: 2px;"></div>`;
 
             // Produits partiels de la multiplication
             let isMultiDigitMult = false;
@@ -1033,13 +1048,13 @@
                         }
                     }
                     // LIGNE NOIRE CONTINUE ÉPAISSE
-                    html += `<div style="grid-column: 1 / -1; width: 100%; height: clamp(4px, 1cqi, 8px); background-color: black; border-radius: 4px;"></div>`;
+                    html += `<div style="grid-column: 1 / -1; width: 100%; height: clamp(4px, 1cqi, 8px); background-color: black; margin: 2px 0; border-radius: 4px;"></div>`;
                 }
             }
 
             // Ligne Résultat
             let sAnsIdx = cols - c.ansStr.length;
-            let resClass = "w-full flex justify-center";
+            let resClass = "w-full flex justify-center py-1";
 
             for (let i = 0; i < cols; i++) {
                 let cellHtml = "";
@@ -1158,10 +1173,10 @@
 
             if (badge) {
                 if (isCorrect) {
-                    badge.className = "px-6 md:px-8 py-2 md:py-3 rounded-full font-black text-lg md:text-xl shadow bg-emerald-500 text-white";
+                    badge.className = "px-8 py-3 rounded-full font-black text-xl shadow bg-emerald-500 text-white";
                     badge.innerHTML = `<i class="fa-solid fa-check mr-2"></i>BRAVO !`;
                 } else {
-                    badge.className = "px-6 md:px-8 py-2 md:py-3 rounded-full font-black text-lg md:text-xl shadow bg-red-500 text-white";
+                    badge.className = "px-8 py-3 rounded-full font-black text-xl shadow bg-red-500 text-white";
                     badge.innerHTML = `<i class="fa-solid fa-xmark mr-2"></i>ERREUR`;
                 }
             }
